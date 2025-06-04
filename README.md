@@ -3,15 +3,15 @@
 ## **Team Members**  
 - **Danny Yang**  
   dannny.yang@mail.utoronto.ca  
-  GitHub: yangda47  
+  utorid: yangda47  
 
 - **Eddy Chen**  
   eddyalfred.chen@mail.utoronto.ca  
-  GitHub: chenedd1  
+  utorid: chenedd1  
 
 - **Xing Yu (Joe) Zhou**  
   xingyujoe.zhou@mail.utoronto.ca  
-  GitHub: zhoux282
+  utorid: zhoux282
 
 ## **Brief Description**  
 Mark-it is a real-time collaborative drawing web application that allows multiple users to draw simultaneously on a shared file.  
