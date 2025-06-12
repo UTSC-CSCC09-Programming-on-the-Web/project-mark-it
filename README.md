@@ -15,7 +15,7 @@
 
 ## **Brief Description**  
 Mark-it is a real-time collaborative drawing web application that allows multiple users to draw simultaneously on a shared file.  
-Share files with other users, collaborate on a drawing real-time, view and edit past drawings, generative fill images with prompts.  
+Share files with other users, collaborate on a drawing real-time, and use generative fill images with prompts collaboratively.  
 The frontend will be built with Vue 3 and communicate with the Express backend using REST API, and credentials will be stored in PostgreSQL and support Google OAuth2, requiring a yearly paid subscription with Stripe Checkout to login.
 
 ## **Frontend Framework**  
@@ -27,16 +27,15 @@ Real-time collaborative drawing using the cursor for the drawing and WebSockets 
 ## **Alpha v. Milestones (20 days)**  
 Core functionality, no requirements for styling.
 - Implement secure login with stored credentials in PostgreSQL and Google OAuth2.  
-- Implement a user creating a file and sharing it with another user.  
+- Implement a user creating a file and sharing it with another user.
 - Implement real-time collaborative drawing with a cursor and ensure it is working.
 
 ## **Beta v. Milestones (14 days)**  
 Other required elements and improving website appearance.
 - Implement subscriptions and secure payment with Stripe Checkout feature in sandbox mode.  
-- Implement a clean and original UI using the Vue 3 frontend framework.  
 - Implement generative fill for images using prompts.
 
 ## **Final v. Milestones (20 days)**  
 Additional features to improve UX.
-- Implement additional drawing features including colour and erasers.
-- Implement allowing users to save and edit on old files
+- Implement colour.
+- Implement a clean and original UI using the Vue 3 frontend framework.  
