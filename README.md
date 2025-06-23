@@ -26,7 +26,7 @@ Real-time collaborative drawing using the cursor for the drawing and WebSockets 
 
 ## **Alpha v. Milestones (20 days)**  
 Core functionality, no requirements for styling.
-- Implement secure login with stored credentials in PostgreSQL and Google OAuth2.  
+- Implement secure login with stored credentials in PostgreSQL and Google OAuth2.
 - Implement a user creating a file and sharing it with another user.
 - Implement real-time collaborative drawing with a cursor and ensure it is working.
 
