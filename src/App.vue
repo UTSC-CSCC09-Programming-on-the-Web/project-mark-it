@@ -1,5 +1,5 @@
 <script setup>
-import Canvas from './components/Canvas.vue'
+import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
 
 // For testing onlu (remove later)
@@ -28,7 +28,7 @@ function signOut() {
   </div>
 
   <main>
-    <Canvas />
+    <Markboard />
   </main>
 </template>
 

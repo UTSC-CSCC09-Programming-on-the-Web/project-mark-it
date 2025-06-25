@@ -68,7 +68,6 @@ const stopDrawing = () => {
 
 <style scoped>
 .markboard-container {
-  position: relative;
   width: 100%;
   height: 100%;
 }
