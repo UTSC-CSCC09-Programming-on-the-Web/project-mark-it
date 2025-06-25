@@ -28,3 +28,9 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Secrets
+server/google.json.nogit
+
+# Test DB
+server/markit.sqlite

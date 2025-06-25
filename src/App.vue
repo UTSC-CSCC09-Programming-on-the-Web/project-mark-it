@@ -1,6 +1,15 @@
 <script setup>
 import Canvas from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
+
+// For testing onlu (remove later)
+function signOut() {
+  fetch('http://localhost:3001/api/users/signout', {
+    credentials: 'include',
+  }).then(() => {
+    window.location.reload()
+  })
+}
 </script>
 
 <template>
@@ -9,6 +18,14 @@ import ToolBar from './components/ToolBar.vue'
       <ToolBar />
     </div>
   </header>
+
+  <!-- For testing only (remove later) -->
+  <div>
+    <a href="http://localhost:3001/auth/google">
+      <button id="oauth">Sign In With Google</button>
+    </a>
+    <button @click="signOut">Sign Out</button>
+  </div>
 
   <main>
     <Canvas />
