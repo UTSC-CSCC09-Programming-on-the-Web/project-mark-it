@@ -16,14 +16,14 @@ app.use(bodyParser.json());
 
 app.use(
   cors({ 
-    origin: 'http://localhost:5173', 
+    origin: "http://localhost:5173", 
     credentials: true 
   })
 );
 
 app.use(
   session({ 
-    secret: 'secret', 
+    secret: "markitmarkitmarkit", 
     resave: false, 
     saveUninitialized: true 
   })
@@ -66,7 +66,7 @@ passport.use(
   })
 );
 
-app.use('/auth/', oauthRouter);
+app.use("/auth/", oauthRouter);
 app.use("/api/users/", usersRouter);
 
 app.listen(PORT, (err) => {
