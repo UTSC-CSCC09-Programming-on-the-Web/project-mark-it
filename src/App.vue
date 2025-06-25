@@ -1,6 +1,15 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
+
+// For testing onlu (remove later)
+function signOut() {
+  fetch('http://localhost:3001/api/users/signout', {
+    credentials: 'include'
+  }).then(() => {
+    window.location.reload();
+  });
+}
 </script>
 
 <template>
@@ -11,6 +20,14 @@ import TheWelcome from './components/TheWelcome.vue'
       <HelloWorld msg="You did it!" />
     </div>
   </header>
+
+  <!-- For testing only (remove later) -->
+  <div>
+    <a href="http://localhost:3001/auth/google">
+      <button id="oauth">Sign In With Google</button>
+    </a>
+    <button @click="signOut">Sign Out</button>
+  </div>
 
   <main>
     <TheWelcome />
