@@ -13,7 +13,7 @@ usersRouter.get("/signout", function (req, res, next) {
   });
 });
 
-usersRouter.get("/me", async (req, res) => {
+usersRouter.get("/me", async function (req, res) {
   if (req.user)
     return res.json({ googleId: req.user.googleId, displayName: req.user.displayName });
   return res.json({ googleId: null, displayName: null });
