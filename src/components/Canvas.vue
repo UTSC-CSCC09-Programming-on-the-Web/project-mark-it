@@ -48,7 +48,7 @@ const paint = (e) => {
 
 const stopDrawing = () => {
   if (!drawing.value || !context) return
-  
+
   drawing.value = false
   context.closePath()
 }
