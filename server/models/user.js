@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../datasource.js";
+import { DataTypes } from 'sequelize'
+import { sequelize } from '../datasource.js'
 
-export const User = sequelize.define("User", {
+export const User = sequelize.define('User', {
   googleId: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -11,4 +11,4 @@ export const User = sequelize.define("User", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-});
+})

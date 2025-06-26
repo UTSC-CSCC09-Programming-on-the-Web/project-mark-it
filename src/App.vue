@@ -22,15 +22,15 @@ function testMe() {
     .then((res) => res.json())
     .then((data) => {
       console.log(data)
-      alert("Your googleId: " + data.googleId)
+      alert('Your googleId: ' + data.googleId)
     })
 }
 
 // File upload logic
 const fileInput = ref(null)
 const userFiles = ref([]) // Store user's files
-const selectedFileId = ref("")
-const shareGoogleId = ref("")
+const selectedFileId = ref('')
+const shareGoogleId = ref('')
 
 // Fetch user's files on mount
 async function fetchUserFiles() {
@@ -43,7 +43,7 @@ async function fetchUserFiles() {
     } else {
       userFiles.value = []
     }
-    console.log('Fetched user files:', userFiles.value);
+    console.log('Fetched user files:', userFiles.value)
   } catch {
     userFiles.value = []
   }
@@ -84,7 +84,7 @@ async function uploadFile(event) {
 function handleDownload(event) {
   event.preventDefault()
   if (!selectedFileId.value) {
-    alert("Please select a file to download.")
+    alert('Please select a file to download.')
     return
   }
   // Create a temporary link to trigger download
@@ -99,7 +99,7 @@ function handleDownload(event) {
 async function handleShare(event) {
   event.preventDefault()
   if (!selectedFileId.value || !shareGoogleId.value) {
-    alert("Please select a file and enter a googleId.")
+    alert('Please select a file and enter a googleId.')
     return
   }
   try {
@@ -111,13 +111,13 @@ async function handleShare(event) {
     })
     const data = await res.json()
     if (res.ok) {
-      alert("File shared successfully!")
-      shareGoogleId.value = ""
+      alert('File shared successfully!')
+      shareGoogleId.value = ''
     } else {
-      alert("Share failed: " + (data.error || "Unknown error"))
+      alert('Share failed: ' + (data.error || 'Unknown error'))
     }
   } catch (err) {
-    alert("Share failed: " + err.message)
+    alert('Share failed: ' + err.message)
   }
 }
 </script>

@@ -1,6 +1,6 @@
-import { Sequelize } from "sequelize";
+import { Sequelize } from 'sequelize'
 
 export const sequelize = new Sequelize({
-  dialect: "sqlite",
-  storage: "markit.sqlite",
-});
+  dialect: 'sqlite',
+  storage: 'markit.sqlite',
+})
