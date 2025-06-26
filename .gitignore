@@ -34,3 +34,6 @@ server/google.json.nogit
 
 # Test DB
 server/markit.sqlite
+
+# User uploads (for now)
+server/uploads

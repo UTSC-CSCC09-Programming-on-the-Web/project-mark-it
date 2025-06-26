@@ -8,6 +8,7 @@ import { readFileSync } from "fs";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { oauthRouter } from "./routers/oauth_router.js";
 import { usersRouter } from "./routers/users_router.js";
+import { filesRouter } from "./routers/files_router.js";
 import { User } from "./models/user.js";
 
 const PORT = 3001;
@@ -68,6 +69,7 @@ passport.use(
 
 app.use("/auth/", oauthRouter);
 app.use("/api/users/", usersRouter);
+app.use("/api/files/", filesRouter);
 
 app.listen(PORT, (err) => {
   if (err) console.log(err);
