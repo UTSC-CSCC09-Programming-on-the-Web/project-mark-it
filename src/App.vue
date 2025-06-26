@@ -1,5 +1,5 @@
 <script setup>
-import Canvas from './components/Canvas.vue'
+import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
 import { ref, onMounted } from 'vue'
 
@@ -171,7 +171,7 @@ async function handleShare(event) {
   </div>
 
   <main>
-    <Canvas />
+    <Markboard />
   </main>
 </template>
 

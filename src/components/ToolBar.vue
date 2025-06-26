@@ -16,6 +16,6 @@ const width = ref(5)
 
 <style scoped>
 .toolbar {
-  position: fixed;
+  
 }
 </style>
