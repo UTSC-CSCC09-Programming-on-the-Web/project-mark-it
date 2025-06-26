@@ -1,7 +1,10 @@
 import { File } from "../models/file.js";
+import { User } from "../models/user.js";
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
+import { Op } from "sequelize";
+import fs from "fs";
 
 export const filesRouter = Router();
 
@@ -38,4 +41,75 @@ filesRouter.post("/", upload.single("file"), async (req, res) => {
         return res.status(422).json({ error: "Failed to save file" });
     }
     return res.json(file);
+});
+
+filesRouter.get("/", async (req, res) => {
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+        // Find files where user is owner
+        const ownedFiles = await File.findAll({
+            where: { UserId: req.user.id }
+        });
+        // Find files shared with user (but not owned)
+        const sharedFiles = await File.findAll({
+            include: [{
+                model: User,
+                where: { id: req.user.id },
+                attributes: [],
+                through: { attributes: [] },
+            }],
+            where: { UserId: { [Op.ne]: req.user.id } }
+        });
+        // Merge and deduplicate by file id
+        const allFiles = [...ownedFiles, ...sharedFiles];
+        const uniqueFiles = [];
+        const seen = new Set();
+        for (const file of allFiles) {
+            if (!seen.has(file.id)) {
+                uniqueFiles.push(file);
+                seen.add(file.id);
+            }
+        }
+        console.log("returning unique files:", uniqueFiles);
+        res.json(uniqueFiles);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch files" });
+    }
+});
+
+filesRouter.get("/my", async (req, res) => {
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    try {
+        const files = await File.findAll({ where: { UserId: req.user.id } });
+        res.json(files);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch files" });
+    }
+});
+
+filesRouter.get("/download/:id", async (req, res) => {
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    const file = await File.findByPk(req.params.id, {
+        include: [{ model: User }]
+    });
+    if (!file) {
+        return res.status(404).json({ error: "File not found" });
+    }
+    // Check if user is owner or shared
+    const isOwner = file.UserId === req.user.id;
+    const isShared = await file.hasUser(req.user);
+    if (!isOwner && !isShared) {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+    const filePath = path.resolve("uploads", file.file.filename);
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found on disk" });
+    }
+    res.download(filePath, file.file.originalname);
 });
