@@ -30,6 +30,7 @@ function testMe() {
 const fileInput = ref(null)
 const userFiles = ref([]) // Store user's files
 const selectedFileId = ref("")
+const shareGoogleId = ref("")
 
 // Fetch user's files on mount
 async function fetchUserFiles() {
@@ -94,6 +95,31 @@ function handleDownload(event) {
   link.rel = 'noopener'
   link.click()
 }
+
+async function handleShare(event) {
+  event.preventDefault()
+  if (!selectedFileId.value || !shareGoogleId.value) {
+    alert("Please select a file and enter a googleId.")
+    return
+  }
+  try {
+    const res = await fetch(`http://localhost:3001/api/files/share/${selectedFileId.value}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ googleId: shareGoogleId.value }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      alert("File shared successfully!")
+      shareGoogleId.value = ""
+    } else {
+      alert("Share failed: " + (data.error || "Unknown error"))
+    }
+  } catch (err) {
+    alert("Share failed: " + err.message)
+  }
+}
 </script>
 
 <template>
@@ -131,7 +157,17 @@ function handleDownload(event) {
     </form>
   </div>
   <div>
-    <label for="colour">Share File:</label>
+    <form @submit="handleShare">
+      <label for="share">Share File:</label>
+      <select name="share" id="share" v-model="selectedFileId">
+        <option value="">Select a file</option>
+        <option v-for="file in userFiles" :key="file.id" :value="file.id">
+          {{ file.file.originalname }}
+        </option>
+      </select>
+      <input type="text" placeholder="Enter googleId to share with" v-model="shareGoogleId" />
+      <button type="submit">Share</button>
+    </form>
   </div>
 
   <main>

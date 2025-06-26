@@ -101,9 +101,10 @@ filesRouter.get("/download/:id", async (req, res) => {
     if (!file) {
         return res.status(404).json({ error: "File not found" });
     }
-    // Check if user is owner or shared
+    // Fetch the User instance for sharing check
+    const userInstance = await User.findByPk(req.user.id);
     const isOwner = file.UserId === req.user.id;
-    const isShared = await file.hasUser(req.user);
+    const isShared = userInstance ? await file.hasUser(userInstance) : false;
     if (!isOwner && !isShared) {
         return res.status(403).json({ error: "Forbidden" });
     }
@@ -112,4 +113,30 @@ filesRouter.get("/download/:id", async (req, res) => {
         return res.status(404).json({ error: "File not found on disk" });
     }
     res.download(filePath, file.file.originalname);
+});
+
+filesRouter.post("/share/:id", async (req, res) => {
+    if (!req.user || !req.user.id) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { googleId } = req.body;
+    if (!googleId) {
+        return res.status(400).json({ error: "Missing googleId" });
+    }
+    const file = await File.findByPk(req.params.id);
+    if (!file) {
+        return res.status(404).json({ error: "File not found" });
+    }
+    // Only allow sharing if the current user owns or has access to the file
+    const isOwner = file.UserId === req.user.id;
+    const isShared = await file.hasUser(req.user);
+    if (!isOwner && !isShared) {
+        return res.status(403).json({ error: "Forbidden" });
+    }
+    const userToShare = await User.findOne({ where: { googleId } });
+    if (!userToShare) {
+        return res.status(404).json({ error: "User not found" });
+    }
+    await file.addUser(userToShare); // Share the file
+    res.json({ success: true });
 });
