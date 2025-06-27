@@ -36,15 +36,13 @@ Core functionality, no requirements for styling.
 - Implement a user creating a file and sharing it with another user.
 - Implement real-time collaborative drawing with a cursor and ensure it is working.
 
-## **Beta v. Milestones (14 days)**
-
+## **Beta v. Milestones (14 days) July 10**  
 Other required elements and improving website appearance.
 
 - Implement subscriptions and secure payment with Stripe Checkout feature in sandbox mode.
 - Implement generative fill for images using prompts.
 
-## **Final v. Milestones (20 days)**
-
+## **Final v. Milestones (20 days) July 30**  
 Additional features to improve UX.
 
 - Implement colour.
