@@ -1,8 +1,17 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { socket, state, sendPaint } from '@/js/socket.js'
+
+const PAINT_STATUS = {
+  0: 'start',
+  1: 'drawing',
+  2: 'stopped'
+}
 
 const markboard = ref()
 let context = null
+
+let connectedContext = null;
 
 const drawing = ref(false)
 const colour = ref('#000000')
@@ -14,6 +23,7 @@ onMounted(() => {
     return
   }
   context = canvasElement.getContext('2d')
+  connectedContext = canvasElement.getContext('2d')
   if (!context) return
 
   canvasElement.width = 1920
@@ -34,6 +44,17 @@ const startDrawing = (e) => {
 
   context.beginPath()
   context.moveTo(e.offsetX, e.offsetY)
+
+  sendPaint({
+    status: PAINT_STATUS[0],
+    data: {
+      x: e.offsetX,
+      y: e.offsetY,
+      colour: colour.value,
+      width: width.value
+    },
+    userId: state.userId,
+  })
 }
 
 const paint = (e) => {
@@ -44,6 +65,17 @@ const paint = (e) => {
 
   context.lineTo(e.offsetX, e.offsetY)
   context.stroke()
+
+  sendPaint({
+    status: PAINT_STATUS[1],
+    data: {
+      x: e.offsetX,
+      y: e.offsetY,
+      colour: colour.value,
+      width: width.value
+    },
+    userId: state.userId,
+  })
 }
 
 const stopDrawing = () => {
@@ -51,7 +83,35 @@ const stopDrawing = () => {
 
   drawing.value = false
   context.closePath()
+
+  sendPaint({
+    status: PAINT_STATUS[2],
+    data: {
+      x: null,
+      y: null,
+      colour: colour.value,
+      width: width.value
+    },
+    userId: state.userId,
+  })
 }
+
+socket.on('paint', (paint) => {
+  console.log('Received paint data:', paint)
+  if (!connectedContext) return
+  if (paint.status === PAINT_STATUS[0]) {
+    connectedContext.beginPath()
+    connectedContext.moveTo(paint.data.x, paint.data.y)
+  } else if (paint.status === PAINT_STATUS[2]) {
+    connectedContext.closePath()
+    return
+  }
+
+  connectedContext.strokeStyle = paint.data.colour
+  connectedContext.lineWidth = paint.data.width
+  connectedContext.lineTo(paint.data.x, paint.data.y)
+  connectedContext.stroke()
+})
 </script>
 
 <template>
