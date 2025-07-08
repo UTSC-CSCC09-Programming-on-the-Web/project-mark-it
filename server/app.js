@@ -3,6 +3,7 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import session from 'express-session'
+import { SESSION_SECRET } from './secrets.js'
 import passport from 'passport'
 import { readFileSync } from 'fs'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
@@ -24,7 +25,7 @@ app.use(
 
 app.use(
   session({
-    secret: 'markitmarkitmarkit',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   }),
