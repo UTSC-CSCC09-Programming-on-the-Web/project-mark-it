@@ -8,6 +8,9 @@ const PAINT_STATUS = {
   2: 'stopped'
 }
 
+const canvaswidth = 1080;
+const canvasheight = 720;
+
 const markboard = ref()
 let context = null
 
@@ -26,8 +29,8 @@ onMounted(() => {
   connectedContext = canvasElement.getContext('2d')
   if (!context) return
 
-  canvasElement.width = 1920
-  canvasElement.height = 1080
+  canvasElement.width = canvaswidth
+  canvasElement.height = canvasheight
 
   context.fillStyle = '#fff'
   context.fillRect(0, 0, canvasElement.width, canvasElement.height)
@@ -112,6 +115,77 @@ socket.on('paint', (paint) => {
   connectedContext.lineTo(paint.data.x, paint.data.y)
   connectedContext.stroke()
 })
+
+function getJpegBlob() {
+  const canvasElement = markboard.value
+  if (!canvasElement) return null
+  return new Promise((resolve) => {
+    canvasElement.toBlob(
+      (blob) => resolve(blob),
+      'image/jpeg',
+      0.92 // quality
+    )
+  })
+}
+
+const maskMode = ref(false)
+const maskboard = ref()
+let maskContext = null
+const maskDrawing = ref(false)
+const maskBrushSize = 40 // Large brush for mask
+
+function toggleMaskMode() {
+  maskMode.value = !maskMode.value
+  return maskMode.value
+}
+
+function startMaskDrawing(e) {
+  if (!maskMode.value || !maskContext) return
+  maskDrawing.value = true
+  drawMask(e)
+}
+
+function drawMask(e) {
+  if (!maskMode.value || !maskDrawing.value || !maskContext) return
+  // Use offsetX/Y for correct coordinates
+  const x = e.offsetX
+  const y = e.offsetY
+  maskContext.globalCompositeOperation = 'source-over'
+  maskContext.beginPath()
+  maskContext.arc(x, y, maskBrushSize / 2, 0, 2 * Math.PI)
+  maskContext.fillStyle = '#fff'
+  maskContext.fill()
+}
+
+function stopMaskDrawing() {
+  maskDrawing.value = false
+}
+
+// Export mask as PNG
+function getMaskPngBlob() {
+  if (!maskboard.value) return null
+  return new Promise((resolve) => {
+    maskboard.value.toBlob(
+      (blob) => resolve(blob),
+      'image/png'
+    )
+  })
+}
+
+function onMaskboardMounted(el) {
+  maskboard.value = el
+  if (el) {
+    el.width = canvaswidth
+    el.height = canvasheight
+    maskContext = el.getContext('2d')
+    maskContext.clearRect(0, 0, canvaswidth, canvasheight)
+    maskContext.globalCompositeOperation = 'source-over'
+    maskContext.fillStyle = '#000'
+    maskContext.fillRect(0, 0, canvaswidth, canvasheight)
+  }
+}
+
+defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode })
 </script>
 
 <template>
@@ -122,19 +196,61 @@ socket.on('paint', (paint) => {
       @mousemove="paint"
       @mouseup="stopDrawing"
       @mouseleave="stopDrawing"
+      :width="canvaswidth"
+      :height="canvasheight"
+      class="main-canvas"
+    ></canvas>
+    <canvas
+      v-if="maskMode"
+      :ref="onMaskboardMounted"
+      class="mask-overlay"
+      :width="canvaswidth"
+      :height="canvasheight"
+      @mousedown="startMaskDrawing"
+      @mousemove="drawMask"
+      @mouseup="stopMaskDrawing"
+      @mouseleave="stopMaskDrawing"
     ></canvas>
   </div>
 </template>
 
 <style scoped>
 .markboard-container {
-  width: 100%;
-  height: 100%;
+  width: 1080px;
+  height: 720px;
+  position: relative;
+  margin: 0 auto;
 }
-
-canvas {
+.main-canvas,
+.mask-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   border: 2px solid #000;
   border-radius: 16px;
   cursor: crosshair;
+  width: 1080px;
+  height: 720px;
+  display: block;
+}
+.main-canvas {
+  z-index: 1;
+}
+.mask-overlay {
+  z-index: 2;
+  pointer-events: auto;
+  opacity: 0.2; /* 20% opacity */
+}
+.mask-btn {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  left: 10px;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  opacity: 0.8;
 }
 </style>

@@ -120,6 +120,18 @@ async function handleShare(event) {
     alert('Share failed: ' + err.message)
   }
 }
+
+const markboardRef = ref(null)
+const maskModeText = ref('Mask Mode')
+let maskModeOn = false
+
+function handleToggleMaskMode() {
+  if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function') {
+    maskModeOn = markboardRef.value.toggleMaskMode()
+    maskModeText.value =
+      maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+  }
+}
 </script>
 
 <template>
@@ -171,8 +183,23 @@ async function handleShare(event) {
   </div>
 
   <main>
-    <Markboard />
+    <Markboard ref="markboardRef" />
+    <button
+      class="mask-btn"
+      @click="handleToggleMaskMode"
+      style="margin: 24px auto 0 auto; display: block;"
+    >
+      {{ maskModeText }}
+    </button>
+    <div>
+      <form>
+        
+      </form>
+    </div>
   </main>
+  <br />
+  <br />
+  <br />
 </template>
 
 <style scoped>
