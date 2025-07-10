@@ -12,7 +12,7 @@ export default {
   },
   methods: {
     async createPortalSession() {
-      const response = await fetch('/api/payment/create-portal-session', {
+      const response = await fetch('http://localhost:3001/api/payment/create-portal-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: this.sessionId })
