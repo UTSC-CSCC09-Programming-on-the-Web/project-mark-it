@@ -132,6 +132,46 @@ function handleToggleMaskMode() {
       maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
   }
 }
+
+function handleGenerativeFill() {
+  //todo
+}
+
+function handleDownloadMarkboard() {
+  if (markboardRef.value) {
+    markboardRef.value.getJpegBlob().then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'markboard.jpg'
+        link.click()
+        URL.revokeObjectURL(url)
+      } else {
+        alert('Failed to download Markboard.')
+      }
+    })
+  }
+}
+
+function handleDownloadMaskboard() {
+  if (markboardRef.value && markboardRef.value.maskMode) {
+    markboardRef.value.getMaskPngBlob().then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'maskboard.png'
+        link.click()
+        URL.revokeObjectURL(url)
+      } else {
+        alert('Failed to download Maskboard.')
+      }
+    })
+  } else {
+    alert('Mask mode is not enabled.')
+  }
+}
 </script>
 
 <template>
@@ -192,10 +232,14 @@ function handleToggleMaskMode() {
       {{ maskModeText }}
     </button>
     <div>
-      <form>
-        
+      <form @submit.prevent="handleGenerativeFill">
+        <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+        <button type="submit">Generate</button>
       </form>
     </div>
+    <br />
+    <button @click="handleDownloadMarkboard">Download Markboard</button>
+    <button @click="handleDownloadMaskboard">Download Maskboard</button>
   </main>
   <br />
   <br />
