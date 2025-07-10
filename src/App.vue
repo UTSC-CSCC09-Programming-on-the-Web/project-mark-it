@@ -133,8 +133,73 @@ function handleToggleMaskMode() {
   }
 }
 
-function handleGenerativeFill() {
-  //todo
+const aiPrompt = ref('')
+
+function handleGenerativeFill(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      return
+    }
+    markboardRef.value.getMaskPngBlob().then((maskBlob) => {
+      if (!maskBlob) {
+        alert('Could not get mask from maskboard.')
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('prompt', aiPrompt.value)
+      formData.append('image', imageBlob, 'image.jpg')
+      formData.append('mask', maskBlob, 'mask.png')
+      formData.append('imageMime', 'image/jpeg')
+      formData.append('maskMime', 'image/png')
+
+      fetch('http://localhost:3001/api/ai_fill/', {
+        method: 'POST',
+        body: formData,
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+              throw new Error('AI Fill failed')
+            })
+          }
+          return res.blob()
+        })
+        .then((blob) => {
+          // Set the generated image directly on the markboard
+          if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+            markboardRef.value.setImageOnMarkboard(blob)
+          }
+          // Turn off mask mode after generation
+          if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function' && markboardRef.value.maskMode) {
+            markboardRef.value.toggleMaskMode()
+            maskModeText.value = 'Mask Mode'
+          }
+        })
+        .catch((err) => {
+          if (err.message !== 'AI Fill failed') {
+            alert('AI Fill failed: ' + err.message)
+          }
+          // Also turn off mask mode on error
+          if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function' && markboardRef.value.maskMode) {
+            markboardRef.value.toggleMaskMode()
+            maskModeText.value = 'Mask Mode'
+          }
+        })
+    })
+  })
 }
 
 function handleDownloadMarkboard() {

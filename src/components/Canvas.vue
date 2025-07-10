@@ -186,9 +186,10 @@ function onMaskboardMounted(el) {
 }
 // Helper to draw the image once loaded
 function draw(img) {
-  // Optionally clear the canvas first:
+  // Fill with white before drawing the image
   context.clearRect(0, 0, canvaswidth, canvasheight)
-  // Draw the image, scaled to fit the canvas
+  context.fillStyle = '#fff'
+  context.fillRect(0, 0, canvaswidth, canvasheight)
   context.drawImage(img, 0, 0, canvaswidth, canvasheight)
 }
 

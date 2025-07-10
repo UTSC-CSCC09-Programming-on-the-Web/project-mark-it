@@ -1,34 +1,39 @@
 import { Router } from 'express';
 import 'dotenv/config';
-import { FormData } from 'formdata-node';
+import { FormData, File } from 'formdata-node';
 import fetch from 'node-fetch';
+import multer from 'multer';
 
 export const aiFillRouter = Router();
+const upload = multer();
 
 const clipdropApiKey = process.env.CLIPDROP_API_KEY;
 
-aiFillRouter.post('/', async (req, res) => {
+aiFillRouter.post('/', upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'mask', maxCount: 1 }
+]), async (req, res) => {
+    const prompt = req.body.prompt
+    const image = req.files?.image?.[0]
+    const mask = req.files?.mask?.[0]
+
     if (!clipdropApiKey) {
         return res.status(500).json({ error: 'ClipDrop API key not configured' });
     }
-    if (!req.body || !req.body.prompt || !req.body.image || !req.body.mask) {
+    if (!prompt || !image || !mask) {
         return res.status(400).json({ error: 'Prompt, image, and mask are required' });
     }
 
-    // Validate file types (basic check)
-    const imageMime = req.body.imageMime || '';
-    const maskMime = req.body.maskMime || '';
-    if (!['image/jpeg', 'image/png'].includes(imageMime)) {
-        return res.status(400).json({ error: 'image_file must be a JPEG or PNG' });
-    }
-    if (maskMime !== 'image/png') {
-        return res.status(400).json({ error: 'mask_file must be a PNG' });
-    }
-
-    const form = new FormData();
-    form.append('image_file', req.body.image, { filename: 'image.' + (imageMime === 'image/png' ? 'png' : 'jpg'), contentType: imageMime });
-    form.append('mask_file', req.body.mask, { filename: 'mask.png', contentType: 'image/png' });
-    form.append('text_prompt', req.body.prompt);
+    const form = new FormData()
+    form.append(
+      'image_file',
+      new File([image.buffer], image.originalname, { type: image.mimetype })
+    )
+    form.append(
+      'mask_file',
+      new File([mask.buffer], mask.originalname, { type: mask.mimetype })
+    )
+    form.append('text_prompt', prompt)
 
 
     fetch('https://clipdrop-api.co/text-inpainting/v1', {
