@@ -184,8 +184,41 @@ function onMaskboardMounted(el) {
     maskContext.fillRect(0, 0, canvaswidth, canvasheight)
   }
 }
+// Helper to draw the image once loaded
+function draw(img) {
+  // Optionally clear the canvas first:
+  context.clearRect(0, 0, canvaswidth, canvasheight)
+  // Draw the image, scaled to fit the canvas
+  context.drawImage(img, 0, 0, canvaswidth, canvasheight)
+}
 
-defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode })
+function setImageOnMarkboard(imageSource) {
+  const canvasElement = markboard.value
+  if (!canvasElement || !context) return
+
+  
+
+  // If it's a string, treat as data URL or URL.
+  // This may not actually be needed.
+  if (typeof imageSource === 'string') {
+    const img = new window.Image()
+    img.onload = () => draw(img)
+    img.src = imageSource
+  } else if (imageSource instanceof Blob || imageSource instanceof File) {
+    const img = new window.Image()
+    img.onload = () => {
+      draw(img)
+      URL.revokeObjectURL(img.src)
+    }
+    img.src = URL.createObjectURL(imageSource)
+  } else if (imageSource instanceof HTMLImageElement) {
+    draw(imageSource)
+  } else {
+    console.warn('Unsupported image source for setImageOnMarkboard')
+  }
+}
+
+defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard })
 </script>
 
 <template>

@@ -172,6 +172,27 @@ function handleDownloadMaskboard() {
     alert('Mask mode is not enabled.')
   }
 }
+
+const testImageUrl = ref('')
+
+function testSetImage(event) {
+  event.preventDefault()
+  if (!testImageUrl.value) {
+    alert('Please enter an image URL.')
+    return
+  }
+  const img = new Image()
+  img.crossOrigin = 'anonymous' // Allow loading from external sources
+  img.src = testImageUrl.value
+  img.onload = () => {
+    if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+      markboardRef.value.setImageOnMarkboard(img)
+    }
+  }
+  img.onerror = () => {
+    alert('Failed to load image.')
+  }
+}
 </script>
 
 <template>
@@ -240,6 +261,12 @@ function handleDownloadMaskboard() {
     <br />
     <button @click="handleDownloadMarkboard">Download Markboard</button>
     <button @click="handleDownloadMaskboard">Download Maskboard</button>
+    <div>
+      <form @submit.prevent="testSetImage">
+        <input type="text" placeholder="Set Image URL" v-model="testImageUrl" />
+        <button type="submit">Set Image (for testing)</button>
+      </form>
+    </div>
   </main>
   <br />
   <br />
