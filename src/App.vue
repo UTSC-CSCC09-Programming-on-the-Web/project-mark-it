@@ -1,6 +1,7 @@
 <script setup>
 import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
+import Payment from './components/PaymentComponent.vue'
 import { ref, onMounted } from 'vue'
 
 // For testing onlu (remove later)
@@ -31,6 +32,7 @@ const fileInput = ref(null)
 const userFiles = ref([]) // Store user's files
 const selectedFileId = ref('')
 const shareGoogleId = ref('')
+const showPayment = ref(false)
 
 // Fetch user's files on mount
 async function fetchUserFiles() {
@@ -136,6 +138,10 @@ async function handleShare(event) {
     </a>
     <button @click="signOut">Sign Out</button>
     <button @click="testMe">Test (googleId)</button>
+  </div>
+  <div>
+    <button @click="showPayment = true">Subscribe</button>
+    <Payment v-if="showPayment" />
   </div>
   <div>
     <form @submit="uploadFile">
