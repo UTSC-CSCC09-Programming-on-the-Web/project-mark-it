@@ -146,14 +146,18 @@ function handleGenerativeFill(event) {
     return
   }
 
+  toggleLoading() // Turn loading on
+
   markboardRef.value.getJpegBlob().then((imageBlob) => {
     if (!imageBlob) {
       alert('Could not get image from markboard.')
+      toggleLoading()
       return
     }
     markboardRef.value.getMaskPngBlob().then((maskBlob) => {
       if (!maskBlob) {
         alert('Could not get mask from maskboard.')
+        toggleLoading()
         return
       }
 
@@ -178,7 +182,6 @@ function handleGenerativeFill(event) {
           return res.blob()
         })
         .then((blob) => {
-          // Set the generated image directly on the markboard
           if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
             markboardRef.value.setImageOnMarkboard(blob)
           }
@@ -187,6 +190,7 @@ function handleGenerativeFill(event) {
             markboardRef.value.toggleMaskMode()
             maskModeText.value = 'Mask Mode'
           }
+          toggleLoading() // Turn loading off
         })
         .catch((err) => {
           if (err.message !== 'AI Fill failed') {
@@ -197,6 +201,7 @@ function handleGenerativeFill(event) {
             markboardRef.value.toggleMaskMode()
             maskModeText.value = 'Mask Mode'
           }
+          toggleLoading() // Turn loading off
         })
     })
   })
@@ -258,6 +263,12 @@ function testSetImage(event) {
     alert('Failed to load image.')
   }
 }
+
+const loading = ref(false)
+
+function toggleLoading() {
+  loading.value = !loading.value
+}
 </script>
 
 <template>
@@ -310,6 +321,8 @@ function testSetImage(event) {
 
   <main>
     <Markboard ref="markboardRef" />
+    <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
+    <div v-if="loading" class="loading-title">Loading...</div>
     <button
       class="mask-btn"
       @click="handleToggleMaskMode"
@@ -318,7 +331,7 @@ function testSetImage(event) {
       {{ maskModeText }}
     </button>
     <div>
-      <form @submit.prevent="handleGenerativeFill">
+      <form @submit.prevent="handleGenerativeFill" v-if="maskModeOn">
         <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
         <button type="submit">Generate</button>
       </form>
@@ -353,5 +366,17 @@ header {
     place-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+
+.loading-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-family: 'comic sans ms', sans-serif;
+  color: #000000;
+  z-index: 4;
 }
 </style>

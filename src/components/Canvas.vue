@@ -275,6 +275,7 @@ defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOn
   pointer-events: auto;
   opacity: 0.2; /* 20% opacity */
 }
+/* currently not in use */
 .mask-btn {
   position: absolute;
   z-index: 3;
