@@ -264,6 +264,24 @@ function testSetImage(event) {
   }
 }
 
+function handleUploadToMarkboard(event) {
+  event.preventDefault()
+  const file = fileInput.value?.files?.[0]
+  if (!file) {
+    alert('Please select a file.')
+    return
+  }
+  // Only allow image files
+  if (!file.type.startsWith('image/')) {
+    alert('Please select an image file.')
+    return
+  }
+  // Pass the File directly to setImageOnMarkboard
+  if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+    markboardRef.value.setImageOnMarkboard(file)
+  }
+}
+
 const loading = ref(false)
 
 function toggleLoading() {
@@ -343,6 +361,13 @@ function toggleLoading() {
       <form @submit.prevent="testSetImage">
         <input type="text" placeholder="Set Image URL" v-model="testImageUrl" />
         <button type="submit">Set Image (for testing)</button>
+      </form>
+    </div>
+    <div>
+      <form @submit="handleUploadToMarkboard">
+        <label for="upload">Upload File:</label>
+        <input type="file" id="upload" ref="fileInput" />
+        <button type="submit">Upload to Markboard</button>
       </form>
     </div>
   </main>
