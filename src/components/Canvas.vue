@@ -1,11 +1,17 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { socket, state, sendPaint } from '@/js/socket.js'
+import { socket, state, sendPaint, sendMarkboard } from '@/js/socket.js'
 
 const PAINT_STATUS = {
   0: 'start',
   1: 'drawing',
   2: 'stopped'
+}
+
+const MARKBOARD_TYPE = {
+  0: 'string',
+  1: 'blob/file',
+  2: 'HTMLImageElement'
 }
 
 const canvaswidth = 1080;
@@ -197,27 +203,51 @@ function setImageOnMarkboard(imageSource) {
   const canvasElement = markboard.value
   if (!canvasElement || !context) return
 
-  
-
   // If it's a string, treat as data URL or URL.
-  // This may not actually be needed.
+  // This may not actually be needed in the final version.
   if (typeof imageSource === 'string') {
     const img = new window.Image()
-    img.onload = () => draw(img)
+    img.onload = () => {
+      draw(img)
+      sendMarkboard({
+        data: canvasElement.toDataURL('image/jpeg'),
+        userId: state.userId
+      })
+    }
     img.src = imageSource
   } else if (imageSource instanceof Blob || imageSource instanceof File) {
     const img = new window.Image()
     img.onload = () => {
       draw(img)
+      sendMarkboard({
+        data: canvasElement.toDataURL('image/jpeg'),
+        userId: state.userId
+      })
       URL.revokeObjectURL(img.src)
     }
     img.src = URL.createObjectURL(imageSource)
   } else if (imageSource instanceof HTMLImageElement) {
     draw(imageSource)
+    sendMarkboard({
+      data: canvasElement.toDataURL('image/jpeg'),
+      userId: state.userId
+    })
   } else {
     console.warn('Unsupported image source for setImageOnMarkboard')
   }
 }
+
+socket.on('markboard', (markboard) => {
+  console.log('Received markboard data:', markboard)
+  if (!connectedContext) return
+  if (markboard && typeof markboard.data === 'string') {
+    const img = new window.Image()
+    img.onload = () => draw(img)
+    img.src = markboard.data
+  } else {
+    console.warn('Unsupported markboard data:', markboard)
+  }
+})
 
 defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard })
 </script>

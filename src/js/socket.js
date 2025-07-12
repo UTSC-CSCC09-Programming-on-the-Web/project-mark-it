@@ -25,3 +25,7 @@ socket.on('paint', (paint) => {
 export function sendPaint(paint) {
   socket.emit('paint', paint)
 }
+
+export function sendMarkboard(markboard) {
+  socket.emit('markboard', markboard)
+}

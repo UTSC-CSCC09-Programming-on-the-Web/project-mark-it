@@ -22,6 +22,10 @@ io.on('connection', (socket) => {
     console.log('paint: ' + msg);
     socket.broadcast.emit('paint', msg);
   });
+  socket.on('markboard', (msg) => {
+    console.log('markboard: ' + msg);
+    socket.broadcast.emit('markboard', msg);
+  });
 });
 
 server.listen(3000, () => {
