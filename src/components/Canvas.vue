@@ -1,29 +1,36 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, defineProps } from 'vue'
 import { socket, state, sendPaint, sendMarkboard } from '@/js/socket.js'
 
 const PAINT_STATUS = {
   0: 'start',
   1: 'drawing',
-  2: 'stopped'
+  2: 'stopped',
 }
 
 const MARKBOARD_TYPE = {
   0: 'string',
   1: 'blob/file',
-  2: 'HTMLImageElement'
+  2: 'HTMLImageElement',
 }
 
-const canvaswidth = 1080;
-const canvasheight = 720;
+const canvaswidth = 1080
+const canvasheight = 720
 
 const markboard = ref()
 let context = null
 
-let connectedContext = null;
+let connectedContext = null
 
 const drawing = ref(false)
-const colour = ref('#000000')
+
+const props = defineProps({
+  color: {
+    type: String,
+    default: '#000000',
+  },
+})
+
 const width = ref(4)
 
 onMounted(() => {
@@ -59,8 +66,8 @@ const startDrawing = (e) => {
     data: {
       x: e.offsetX,
       y: e.offsetY,
-      colour: colour.value,
-      width: width.value
+      colour: props.color,
+      width: width.value,
     },
     userId: state.userId,
   })
@@ -69,7 +76,7 @@ const startDrawing = (e) => {
 const paint = (e) => {
   if (!drawing.value || !context) return
 
-  context.strokeStyle = colour.value
+  context.strokeStyle = props.color
   context.lineWidth = width.value
 
   context.lineTo(e.offsetX, e.offsetY)
@@ -80,8 +87,8 @@ const paint = (e) => {
     data: {
       x: e.offsetX,
       y: e.offsetY,
-      colour: colour.value,
-      width: width.value
+      colour: props.color,
+      width: width.value,
     },
     userId: state.userId,
   })
@@ -98,8 +105,8 @@ const stopDrawing = () => {
     data: {
       x: null,
       y: null,
-      colour: colour.value,
-      width: width.value
+      colour: props.color,
+      width: width.value,
     },
     userId: state.userId,
   })
@@ -129,7 +136,7 @@ function getJpegBlob() {
     canvasElement.toBlob(
       (blob) => resolve(blob),
       'image/jpeg',
-      0.92 // quality
+      0.92, // quality
     )
   })
 }
@@ -171,10 +178,7 @@ function stopMaskDrawing() {
 function getMaskPngBlob() {
   if (!maskboard.value) return null
   return new Promise((resolve) => {
-    maskboard.value.toBlob(
-      (blob) => resolve(blob),
-      'image/png'
-    )
+    maskboard.value.toBlob((blob) => resolve(blob), 'image/png')
   })
 }
 
@@ -211,7 +215,7 @@ function setImageOnMarkboard(imageSource) {
       draw(img)
       sendMarkboard({
         data: canvasElement.toDataURL('image/jpeg'),
-        userId: state.userId
+        userId: state.userId,
       })
     }
     img.src = imageSource
@@ -221,7 +225,7 @@ function setImageOnMarkboard(imageSource) {
       draw(img)
       sendMarkboard({
         data: canvasElement.toDataURL('image/jpeg'),
-        userId: state.userId
+        userId: state.userId,
       })
       URL.revokeObjectURL(img.src)
     }
@@ -230,7 +234,7 @@ function setImageOnMarkboard(imageSource) {
     draw(imageSource)
     sendMarkboard({
       data: canvasElement.toDataURL('image/jpeg'),
-      userId: state.userId
+      userId: state.userId,
     })
   } else {
     console.warn('Unsupported image source for setImageOnMarkboard')
@@ -250,6 +254,8 @@ socket.on('markboard', (markboard) => {
 })
 
 defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard })
+
+
 </script>
 
 <template>

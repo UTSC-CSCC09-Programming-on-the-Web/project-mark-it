@@ -128,8 +128,7 @@ let maskModeOn = false
 function handleToggleMaskMode() {
   if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function') {
     maskModeOn = markboardRef.value.toggleMaskMode()
-    maskModeText.value =
-      maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+    maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
   }
 }
 
@@ -186,7 +185,11 @@ function handleGenerativeFill(event) {
             markboardRef.value.setImageOnMarkboard(blob)
           }
           // Turn off mask mode after generation
-          if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function' && markboardRef.value.maskMode) {
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
             markboardRef.value.toggleMaskMode()
             maskModeText.value = 'Mask Mode'
           }
@@ -197,7 +200,11 @@ function handleGenerativeFill(event) {
             alert('AI Fill failed: ' + err.message)
           }
           // Also turn off mask mode on error
-          if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function' && markboardRef.value.maskMode) {
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
             markboardRef.value.toggleMaskMode()
             maskModeText.value = 'Mask Mode'
           }
@@ -287,12 +294,14 @@ const loading = ref(false)
 function toggleLoading() {
   loading.value = !loading.value
 }
+
+const color = ref('#000000')
 </script>
 
 <template>
   <header>
     <div class="wrapper">
-      <ToolBar />
+      <ToolBar @watch="(newColor) => color = newColor"/>
     </div>
   </header>
 
@@ -338,13 +347,13 @@ function toggleLoading() {
   </div>
 
   <main>
-    <Markboard ref="markboardRef" />
+    <Markboard ref="markboardRef" color="color"/>
     <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
     <div v-if="loading" class="loading-title">Loading...</div>
     <button
       class="mask-btn"
       @click="handleToggleMaskMode"
-      style="margin: 24px auto 0 auto; display: block;"
+      style="margin: 24px auto 0 auto; display: block"
     >
       {{ maskModeText }}
     </button>
@@ -392,7 +401,6 @@ header {
     flex-wrap: wrap;
   }
 }
-
 
 .loading-title {
   position: absolute;
