@@ -296,12 +296,23 @@ function toggleLoading() {
 }
 
 const color = ref('#000000')
+
+function handleColorChange(newColor) {
+  console.log('Color changed to:', newColor)
+  color.value = newColor
+}
+
+function handleRoomJoin(roomName) {
+  console.log('Joining room:', roomName)
+  
+}
+
 </script>
 
 <template>
   <header>
     <div class="wrapper">
-      <ToolBar @watch="(newColor) => color = newColor"/>
+      <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
     </div>
   </header>
 
@@ -347,7 +358,7 @@ const color = ref('#000000')
   </div>
 
   <main>
-    <Markboard ref="markboardRef" color="color"/>
+    <Markboard ref="markboardRef" :color="color" />
     <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
     <div v-if="loading" class="loading-title">Loading...</div>
     <button

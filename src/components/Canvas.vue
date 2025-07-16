@@ -254,8 +254,6 @@ socket.on('markboard', (markboard) => {
 })
 
 defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard })
-
-
 </script>
 
 <template>
