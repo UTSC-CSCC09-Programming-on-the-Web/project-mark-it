@@ -27,7 +27,7 @@
 <script setup>
 import { ref, defineProps } from 'vue'
 
-const preSetColours = ref(['#FF0000', '#0000FF', '#00FF00', '#000000', '#FFFFFF'])
+const preSetColours = ref(['#FF0000', '#FF8F00', '#FFFF00', '#00FF00', '#0000FF', '#FF00FF', '#FFFFFF', '#000000'])
 const colour = ref('#000000')
 const props = defineProps({
   color: {
