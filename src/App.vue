@@ -1,16 +1,9 @@
 <script setup>
 import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
+import TopBar from './components/TopBar.vue'
 import { ref, onMounted } from 'vue'
 
-// For testing onlu (remove later)
-function signOut() {
-  fetch('http://localhost:3001/api/users/signout', {
-    credentials: 'include',
-  }).then(() => {
-    window.location.reload()
-  })
-}
 
 // For testing only (remove later)
 // This function fetches the current user's data from the server
@@ -310,20 +303,14 @@ function handleRoomJoin(roomName) {
 </script>
 
 <template>
+  <TopBar />
+  <div class="main">
   <header>
     <div class="wrapper">
       <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
     </div>
   </header>
 
-  <!-- For testing only (remove later) -->
-  <div>
-    <a href="http://localhost:3001/auth/google">
-      <button id="oauth">Sign In With Google</button>
-    </a>
-    <button @click="signOut">Sign Out</button>
-    <button @click="testMe">Test (googleId)</button>
-  </div>
   <div>
     <form @submit="uploadFile">
       <label for="upload">Upload File:</label>
@@ -394,6 +381,7 @@ function handleRoomJoin(roomName) {
   <br />
   <br />
   <br />
+  </div>
 </template>
 
 <style scoped>
@@ -411,6 +399,11 @@ header {
     place-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+.main {
+  padding-top: 64px;
+  position: relative;
 }
 
 .loading-title {
