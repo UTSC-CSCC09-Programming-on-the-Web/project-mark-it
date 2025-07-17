@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import PaymentComponent from './PaymentComponent.vue'
 
 const user = ref({ googleId: null, displayName: null })
 const userLoading = ref(true)
+const showPayment = ref(false)
 
 async function fetchUser() {
   userLoading.value = true
@@ -28,6 +30,10 @@ onMounted(fetchUser)
     <div class="top-bar-content">
       <span class="app-title">Mark It</span>
       <div class="top-bar-actions">
+        <div>
+            <button @click="showPayment = true">Subscribe</button>
+            <Payment v-if="showPayment" />
+        </div>
         <span v-if="userLoading">...</span>
         <template v-else>
           <template v-if="!user.googleId">

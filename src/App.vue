@@ -402,7 +402,6 @@ const markboardUploadError = ref('')
           </div>
         </div>
       </div>
-      <hr />
       <div class="generative-fill">
         <h2>AI Generative Fill</h2>
         <p>Powered by Clipdrop.co</p>
@@ -436,6 +435,27 @@ const markboardUploadError = ref('')
     <br />
     <br />
   </div>
+  <footer>
+    <div class="footer-content">
+      <h1>Credits:</h1>
+      <ul>
+        <li>
+          The Stripe structure and code in payment_router.js, PaymentComponent.vue, 
+          SuccessPage.vue, and CancelPage.vue obtained from:
+          <a href="https://docs.stripe.com/billing/quickstart?lang=node"
+            >Stripe Checkout</a
+          >
+          and 
+          <a href="https://docs.stripe.com/error-handling"
+            >Stripe Error Handling Documentation</a
+          >
+        </li>
+        <li>
+          GitHub Copilot inline code suggestions were used to help complete the code.
+        </li>
+      </ul>
+    </div>
+  </footer>
 </template>
 
 <style scoped>
@@ -469,6 +489,10 @@ header {
   display: flex;
   margin-top: 16px;
   margin-bottom: 16px;
+  max-width: 1024px;   /* Match markboard width */
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .markboard-controls .wrapper {
@@ -592,8 +616,8 @@ header {
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 32px 24px 24px 24px;
   margin: 32px auto 24px auto;
-  max-width: 1080px;
-  width: 1080px;
+  max-width: 1024px;
+  width: 1024px;
 }
 
 .generative-fill h2 {
@@ -708,5 +732,46 @@ header {
 .how-to-use-tooltip:hover .how-to-use-popup,
 .how-to-use-tooltip:focus .how-to-use-popup {
   display: block;
+}
+
+footer {
+  flex-shrink: 0;
+  background: #f8fafc;
+  border-top: 1px solid #ddd;
+  padding: 24px 32px 16px 32px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.footer-content {
+  max-width: 1024px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.footer-content h1 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  color: #1976d2;
+}
+
+.footer-content ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-content ul li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.footer-content ul li a {
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.footer-content ul li a:hover {
+  text-decoration: underline;
 }
 </style>
