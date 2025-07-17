@@ -1,17 +1,10 @@
 <script setup>
 import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
+import TopBar from './components/TopBar.vue'
 import Payment from './components/PaymentComponent.vue'
 import { ref, onMounted } from 'vue'
 
-// For testing onlu (remove later)
-function signOut() {
-  fetch('http://localhost:3001/api/users/signout', {
-    credentials: 'include',
-  }).then(() => {
-    window.location.reload()
-  })
-}
 
 // For testing only (remove later)
 // This function fetches the current user's data from the server
@@ -122,63 +115,327 @@ async function handleShare(event) {
     alert('Share failed: ' + err.message)
   }
 }
+
+const markboardRef = ref(null)
+const maskModeText = ref('Mask Mode')
+let maskModeOn = false
+
+function handleToggleMaskMode() {
+  if (markboardRef.value && typeof markboardRef.value.toggleMaskMode === 'function') {
+    maskModeOn = markboardRef.value.toggleMaskMode()
+    maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+  }
+}
+
+const aiPrompt = ref('')
+
+function handleGenerativeFill(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!maskModeOn) {
+    alert('Please enable mask mode to use generative fill.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    markboardRef.value.getMaskPngBlob().then((maskBlob) => {
+      if (!maskBlob) {
+        alert('Could not get mask from maskboard.')
+        toggleLoading()
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('prompt', aiPrompt.value)
+      formData.append('image', imageBlob, 'image.jpg')
+      formData.append('mask', maskBlob, 'mask.png')
+      formData.append('imageMime', 'image/jpeg')
+      formData.append('maskMime', 'image/png')
+
+      fetch('http://localhost:3001/api/ai_fill/generative-fill/', {
+        method: 'POST',
+        body: formData,
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+              throw new Error('AI Fill failed')
+            })
+          }
+          return res.blob()
+        })
+        .then((blob) => {
+          if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+            markboardRef.value.setImageOnMarkboard(blob)
+          }
+          // Turn off mask mode after generation
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+        .catch((err) => {
+          if (err.message !== 'AI Fill failed') {
+            alert('AI Fill failed: ' + err.message)
+          }
+          // Also turn off mask mode on error
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+    })
+  })
+}
+
+function handleAIReimagine (event) {
+  event.preventDefault()
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'image.jpg')
+    formData.append('imageMime', 'image/jpeg')
+
+    fetch('http://localhost:3001/api/ai_fill/reimagine/', {
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => {
+            alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+            throw new Error('AI Fill failed')
+          })
+        }
+        return res.blob()
+      })
+      .then((blob) => {
+        if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+          markboardRef.value.setImageOnMarkboard(blob)
+        }
+        toggleLoading() // Turn loading off
+      })
+      .catch((err) => {
+        if (err.message !== 'AI Fill failed') {
+          alert('AI Fill failed: ' + err.message)
+        }
+        toggleLoading() // Turn loading off
+      })
+  })
+}
+
+function handleDownloadMarkboard() {
+  if (markboardRef.value) {
+    markboardRef.value.getJpegBlob().then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'markboard.jpg'
+        link.click()
+        URL.revokeObjectURL(url)
+      } else {
+        alert('Failed to download Markboard.')
+      }
+    })
+  }
+}
+
+function handleDownloadMaskboard() {
+  if (markboardRef.value && markboardRef.value.maskMode) {
+    markboardRef.value.getMaskPngBlob().then((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'maskboard.png'
+        link.click()
+        URL.revokeObjectURL(url)
+      } else {
+        alert('Failed to download Maskboard.')
+      }
+    })
+  } else {
+    alert('Mask mode is not enabled.')
+  }
+}
+
+const testImageUrl = ref('')
+
+function testSetImage(event) {
+  event.preventDefault()
+  if (!testImageUrl.value) {
+    alert('Please enter an image URL.')
+    return
+  }
+  const img = new Image()
+  img.crossOrigin = 'anonymous' // Allow loading from external sources
+  img.src = testImageUrl.value
+  img.onload = () => {
+    if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+      markboardRef.value.setImageOnMarkboard(img)
+    }
+  }
+  img.onerror = () => {
+    alert('Failed to load image.')
+  }
+}
+
+const markboardFileInput = ref(null)
+const chosenFileName = ref('No file chosen')
+
+function updateFileName(event) {
+  const file = event.target.files[0]
+  chosenFileName.value = file ? file.name : 'No file chosen'
+}
+
+function handleUploadToMarkboard(event) {
+  event.preventDefault()
+  markboardUploadError.value = '' // Clear previous error
+  const file = markboardFileInput.value?.files?.[0]
+  if (!file) {
+    markboardUploadError.value = 'Please select a file.'
+    return
+  }
+  if (!file.type.startsWith('image/')) {
+    markboardUploadError.value = 'Please select an image file.'
+    return
+  }
+  if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+    markboardRef.value.setImageOnMarkboard(file)
+  }
+}
+
+const loading = ref(false)
+
+function toggleLoading() {
+  loading.value = !loading.value
+}
+
+const color = ref('#000000')
+
+function handleColorChange(newColor) {
+  console.log('Color changed to:', newColor)
+  color.value = newColor
+}
+
+function handleRoomJoin(roomName) {
+  console.log('Joining room:', roomName)
+  
+}
+
+function handleClearMarkboard() {
+  if (window.confirm('Are you sure you want to clear the markboard?')) {
+    if (markboardRef.value && typeof markboardRef.value.clearMarkboard === 'function') {
+      markboardRef.value.clearMarkboard()
+    }
+  }
+}
+
+const markboardUploadError = ref('')
 </script>
 
 <template>
-  <header>
-    <div class="wrapper">
-      <ToolBar />
-    </div>
-  </header>
-
-  <!-- For testing only (remove later) -->
-  <div>
-    <a href="http://localhost:3001/auth/google">
-      <button id="oauth">Sign In With Google</button>
-    </a>
-    <button @click="signOut">Sign Out</button>
-    <button @click="testMe">Test (googleId)</button>
+  <TopBar />
+  <div class="main">
+    <main>
+      <div class="markboard-title">
+        <h1>Markboard</h1>
+        <p>Click and drag to draw</p>
+      </div>
+      <Markboard ref="markboardRef" :color="color" />
+      <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
+      <div v-if="loading" class="loading-title">Loading...</div>
+      <div class="markboard-controls">
+        <div class="wrapper">
+          <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
+          <div class="markboard-actions">
+            <form @submit="handleUploadToMarkboard" class="upload-form">
+              <label class="file-label">
+                <input type="file" ref="markboardFileInput" @change="updateFileName" />
+                <span class="file-label-text">Choose File</span>
+              </label>
+              <span class="file-name">{{ chosenFileName }}</span>
+              <button type="submit">Upload to Markboard</button>
+            </form>
+            <span v-if="markboardUploadError" class="input-error">{{ markboardUploadError }}</span>
+            <div class="markboard-actions-bottom">
+              <button @click="handleDownloadMarkboard">Download Markboard</button>
+              <button @click="handleClearMarkboard">Clear Markboard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr />
+      <div class="generative-fill">
+        <h2>AI Generative Fill</h2>
+        <p>Powered by Clipdrop.co</p>
+        <span class="how-to-use-tooltip">
+          How to use
+          <span class="how-to-use-popup">
+            <strong>Instructions:</strong><br>
+            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
+            2. Enter a prompt describing what you want.<br>
+            3. Click <b>Generate</b>.<br>
+            4. Wait for the AI to fill the masked area.<br>
+          </span>
+        </span>
+        <div class="wrapper generative-fill-actions">
+          <button
+            class="mask-btn"
+            @click="handleToggleMaskMode"
+          >
+            {{ maskModeText }}
+          </button>
+          <div>
+            <form @submit.prevent="handleGenerativeFill" class="prompt-form">
+              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+              <button type="submit">Generate</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+    <br />
+    <br />
+    <br />
   </div>
-  <div>
-    <button @click="showPayment = true">Subscribe</button>
-    <Payment v-if="showPayment" />
-  </div>
-  <div>
-    <form @submit="uploadFile">
-      <label for="upload">Upload File:</label>
-      <input type="file" id="upload" ref="fileInput" />
-      <button type="submit">Upload</button>
-    </form>
-  </div>
-  <div>
-    <form @submit="handleDownload">
-      <label for="download">Download File:</label>
-      <select name="download" id="download" v-model="selectedFileId">
-        <option value="">Select a file</option>
-        <option v-for="file in userFiles" :key="file.id" :value="file.id">
-          {{ file.file.originalname }}
-        </option>
-      </select>
-      <button type="submit">Download</button>
-    </form>
-  </div>
-  <div>
-    <form @submit="handleShare">
-      <label for="share">Share File:</label>
-      <select name="share" id="share" v-model="selectedFileId">
-        <option value="">Select a file</option>
-        <option v-for="file in userFiles" :key="file.id" :value="file.id">
-          {{ file.file.originalname }}
-        </option>
-      </select>
-      <input type="text" placeholder="Enter googleId to share with" v-model="shareGoogleId" />
-      <button type="submit">Share</button>
-    </form>
-  </div>
-
-  <main>
-    <Markboard />
-  </main>
 </template>
 
 <style scoped>
@@ -196,5 +453,260 @@ header {
     place-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+.main {
+  padding-top: 64px;
+  position: relative;
+}
+
+.markboard-title {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.markboard-controls {
+  display: flex;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.markboard-controls .wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.markboard-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.markboard-actions-bottom {
+  display: flex;
+  gap: 12px;
+}
+
+.markboard-actions form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.markboard-actions button,
+.markboard-actions form button {
+  font-size: 1rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.markboard-actions button:hover,
+.markboard-actions form button:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.file-label {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: #1976d2;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 1rem;
+  border: 1px solid #1976d2;
+  transition: background 0.15s, color 0.15s;
+}
+
+.file-label:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.file-label input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.file-label-text {
+  pointer-events: none;
+}
+
+.file-name {
+  font-size: 0.95rem;
+  color: #333;
+  margin-left: 4px;
+  min-width: 100px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.loading-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-family: 'comic sans ms', sans-serif;
+  color: #000000;
+  z-index: 4;
+}
+
+.toolbar-colours {
+  display: flex;
+  align-items: center; /* Vertically center children */
+  gap: 12px;           /* Optional: space between items */
+}
+
+.input-error {
+  color: #d32f2f;
+  font-size: 0.95em;
+  margin-left: 8px;
+  margin-top: 2px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.generative-fill {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 32px 24px 24px 24px;
+  margin: 32px auto 24px auto;
+  max-width: 1080px;
+  width: 1080px;
+}
+
+.generative-fill h2 {
+  margin-top: 0;
+  font-size: 1.6rem;
+  color: #1976d2;
+}
+
+.generative-fill-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start; /* Align items to the left */
+  gap: 20px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-top: 18px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.generative-fill-actions .mask-btn {
+  margin: 0;
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.generative-fill-actions .mask-btn:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.generative-fill-actions input[type="text"] {
+  font-size: 1rem;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #bdbdbd;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  min-width: 600px;
+  max-width: 800px;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+}
+
+.generative-fill-actions input[type="text"]:focus {
+  border-color: #1976d2;
+}
+
+.generative-fill-actions button[type="submit"] {
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-left: 8px;
+}
+
+.generative-fill-actions button[type="submit"]:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.prompt-form {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 8px;
+  width: 100%;
+}
+
+.how-to-use-tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.how-to-use-popup {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 120%;
+  transform: translateX(-20%);
+  background: #fff;
+  color: #222;
+  border: 1.5px solid #1976d2;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 16px 20px;
+  min-width: 600px;   /* Increased from 260px */
+  max-width: 800px;   /* Optional: prevents it from getting too wide */
+  width: 100%;        /* Ensures it fills up to max-width */
+  z-index: 10;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.how-to-use-tooltip:hover .how-to-use-popup,
+.how-to-use-tooltip:focus .how-to-use-popup {
+  display: block;
 }
 </style>

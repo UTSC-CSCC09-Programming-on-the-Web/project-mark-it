@@ -39,3 +39,6 @@ server/markit.sqlite
 
 # User uploads (for now)
 server/uploads
+
+# Environment variables
+server/.env
