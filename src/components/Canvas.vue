@@ -253,7 +253,19 @@ socket.on('markboard', (markboard) => {
   }
 })
 
-defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard })
+function clearMarkboard() {
+  const canvasElement = markboard.value
+  if (!canvasElement||!context) return
+  context.clearRect(0, 0, canvaswidth, canvasheight)
+  context.fillStyle = '#fff'
+  context.fillRect(0, 0, canvaswidth, canvasheight)
+  sendMarkboard({
+    data: canvasElement.toDataURL('image/jpeg'),
+    userId: state.userId,
+  })
+}
+
+defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard, clearMarkboard })
 </script>
 
 <template>

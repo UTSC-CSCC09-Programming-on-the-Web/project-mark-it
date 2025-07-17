@@ -264,19 +264,26 @@ function testSetImage(event) {
   }
 }
 
+const markboardFileInput = ref(null)
+const chosenFileName = ref('No file chosen')
+
+function updateFileName(event) {
+  const file = event.target.files[0]
+  chosenFileName.value = file ? file.name : 'No file chosen'
+}
+
 function handleUploadToMarkboard(event) {
   event.preventDefault()
-  const file = fileInput.value?.files?.[0]
+  markboardUploadError.value = '' // Clear previous error
+  const file = markboardFileInput.value?.files?.[0]
   if (!file) {
-    alert('Please select a file.')
+    markboardUploadError.value = 'Please select a file.'
     return
   }
-  // Only allow image files
   if (!file.type.startsWith('image/')) {
-    alert('Please select an image file.')
+    markboardUploadError.value = 'Please select an image file.'
     return
   }
-  // Pass the File directly to setImageOnMarkboard
   if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
     markboardRef.value.setImageOnMarkboard(file)
   }
@@ -300,87 +307,65 @@ function handleRoomJoin(roomName) {
   
 }
 
+function handleClearMarkboard() {
+  if (window.confirm('Are you sure you want to clear the markboard?')) {
+    if (markboardRef.value && typeof markboardRef.value.clearMarkboard === 'function') {
+      markboardRef.value.clearMarkboard()
+    }
+  }
+}
+
+const markboardUploadError = ref('')
 </script>
 
 <template>
   <TopBar />
   <div class="main">
-  <header>
-    <div class="wrapper">
-      <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
-    </div>
-  </header>
-
-  <div>
-    <form @submit="uploadFile">
-      <label for="upload">Upload File:</label>
-      <input type="file" id="upload" ref="fileInput" />
-      <button type="submit">Upload</button>
-    </form>
-  </div>
-  <div>
-    <form @submit="handleDownload">
-      <label for="download">Download File:</label>
-      <select name="download" id="download" v-model="selectedFileId">
-        <option value="">Select a file</option>
-        <option v-for="file in userFiles" :key="file.id" :value="file.id">
-          {{ file.file.originalname }}
-        </option>
-      </select>
-      <button type="submit">Download</button>
-    </form>
-  </div>
-  <div>
-    <form @submit="handleShare">
-      <label for="share">Share File:</label>
-      <select name="share" id="share" v-model="selectedFileId">
-        <option value="">Select a file</option>
-        <option v-for="file in userFiles" :key="file.id" :value="file.id">
-          {{ file.file.originalname }}
-        </option>
-      </select>
-      <input type="text" placeholder="Enter googleId to share with" v-model="shareGoogleId" />
-      <button type="submit">Share</button>
-    </form>
-  </div>
-
-  <main>
-    <Markboard ref="markboardRef" :color="color" />
-    <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
-    <div v-if="loading" class="loading-title">Loading...</div>
-    <button
-      class="mask-btn"
-      @click="handleToggleMaskMode"
-      style="margin: 24px auto 0 auto; display: block"
-    >
-      {{ maskModeText }}
-    </button>
-    <div>
-      <form @submit.prevent="handleGenerativeFill" v-if="maskModeOn">
-        <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-        <button type="submit">Generate</button>
-      </form>
-    </div>
+    <main>
+      <div class="markboard-title">
+        <h1>Markboard</h1>
+        <p>Click and drag to draw</p>
+      </div>
+      <Markboard ref="markboardRef" :color="color" />
+      <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
+      <div v-if="loading" class="loading-title">Loading...</div>
+      <div class="markboard-controls">
+        <div class="wrapper">
+          <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
+          <div class="markboard-actions">
+            <form @submit="handleUploadToMarkboard" class="upload-form">
+              <label class="file-label">
+                <input type="file" ref="markboardFileInput" @change="updateFileName" />
+                <span class="file-label-text">Choose File</span>
+              </label>
+              <span class="file-name">{{ chosenFileName }}</span>
+              <button type="submit">Upload to Markboard</button>
+            </form>
+            <span v-if="markboardUploadError" class="input-error">{{ markboardUploadError }}</span>
+            <div class="markboard-actions-bottom">
+              <button @click="handleDownloadMarkboard">Download Markboard</button>
+              <button @click="handleClearMarkboard">Clear Markboard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button
+        class="mask-btn"
+        @click="handleToggleMaskMode"
+        style="margin: 24px auto 0 auto; display: block"
+      >
+        {{ maskModeText }}
+      </button>
+      <div>
+        <form @submit.prevent="handleGenerativeFill" v-if="maskModeOn">
+          <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+          <button type="submit">Generate</button>
+        </form>
+      </div>
+    </main>
     <br />
-    <button @click="handleDownloadMarkboard">Download Markboard</button>
-    <button @click="handleDownloadMaskboard">Download Maskboard</button>
-    <div>
-      <form @submit.prevent="testSetImage">
-        <input type="text" placeholder="Set Image URL" v-model="testImageUrl" />
-        <button type="submit">Set Image (for testing)</button>
-      </form>
-    </div>
-    <div>
-      <form @submit="handleUploadToMarkboard">
-        <label for="upload">Upload File:</label>
-        <input type="file" id="upload" ref="fileInput" />
-        <button type="submit">Upload to Markboard</button>
-      </form>
-    </div>
-  </main>
-  <br />
-  <br />
-  <br />
+    <br />
+    <br />
   </div>
 </template>
 
@@ -406,6 +391,106 @@ header {
   position: relative;
 }
 
+.markboard-title {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.markboard-controls {
+  display: flex;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.markboard-controls .wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.markboard-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.markboard-actions-bottom {
+  display: flex;
+  gap: 12px;
+}
+
+.markboard-actions form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.markboard-actions button,
+.markboard-actions form button {
+  font-size: 1rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.markboard-actions button:hover,
+.markboard-actions form button:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.file-label {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background: #1976d2;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 1rem;
+  border: 1px solid #1976d2;
+  transition: background 0.15s, color 0.15s;
+}
+
+.file-label:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.file-label input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.file-label-text {
+  pointer-events: none;
+}
+
+.file-name {
+  font-size: 0.95rem;
+  color: #333;
+  margin-left: 4px;
+  min-width: 100px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+}
+
 .loading-title {
   position: absolute;
   top: 50%;
@@ -415,5 +500,20 @@ header {
   font-family: 'comic sans ms', sans-serif;
   color: #000000;
   z-index: 4;
+}
+
+.toolbar-colours {
+  display: flex;
+  align-items: center; /* Vertically center children */
+  gap: 12px;           /* Optional: space between items */
+}
+
+.input-error {
+  color: #d32f2f;
+  font-size: 0.95em;
+  margin-left: 8px;
+  margin-top: 2px;
+  display: inline-block;
+  vertical-align: middle;
 }
 </style>

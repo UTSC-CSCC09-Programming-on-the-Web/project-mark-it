@@ -14,17 +14,7 @@
         ></button>
       </div>
     </div>
-    <div class="room-info">
-      <label for="room">Room:</label>
-      <input
-        type="text"
-        id="room"
-        class="room-input"
-        v-model="room"
-        @keyup.enter="$emit('joinRoom', room)"
-        placeholder="Enter room name"
-      />
-    </div>
+    <!-- Room Info -->
   </div>
 </template>
 
