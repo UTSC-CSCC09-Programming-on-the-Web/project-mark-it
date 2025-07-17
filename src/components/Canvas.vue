@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, defineProps } from 'vue'
-import { socket, state, sendPaint, sendMarkboard } from '@/js/socket.js'
+import { socket, state, sendPaint, sendMarkboard, requestMarkboard } from '@/js/socket.js'
 
 const PAINT_STATUS = {
   0: 'start',
@@ -47,6 +47,8 @@ onMounted(() => {
 
   context.fillStyle = '#fff'
   context.fillRect(0, 0, canvasElement.width, canvasElement.height)
+
+  requestMarkboard()
 })
 
 onUnmounted(() => {
@@ -127,6 +129,14 @@ socket.on('paint', (paint) => {
   connectedContext.lineWidth = paint.data.width
   connectedContext.lineTo(paint.data.x, paint.data.y)
   connectedContext.stroke()
+})
+
+socket.on('markboardReq', () => {
+  console.log('Markboard requested, sending current markboard')
+  sendMarkboard({
+    data: markboard.value.toDataURL('image/jpeg'),
+    userId: state.userId,
+  })
 })
 
 function getJpegBlob() {

@@ -26,6 +26,11 @@ io.on('connection', (socket) => {
     console.log('markboard: ' + msg);
     socket.broadcast.emit('markboard', msg);
   });
+  socket.on('markboardReq', () => {
+    console.log('markboard requested');
+    // Ask other clients to send their markboards
+    socket.broadcast.emit('markboardReq', true);
+  });
 });
 
 server.listen(3000, () => {
