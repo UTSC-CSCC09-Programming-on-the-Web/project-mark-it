@@ -133,6 +133,10 @@ function handleGenerativeFill(event) {
     alert('Please enter a prompt.')
     return
   }
+  if (!maskModeOn) {
+    alert('Please enable mask mode to use generative fill.')
+    return
+  }
   if (!markboardRef.value) {
     alert('Markboard not ready.')
     return
@@ -183,8 +187,8 @@ function handleGenerativeFill(event) {
             typeof markboardRef.value.toggleMaskMode === 'function' &&
             markboardRef.value.maskMode
           ) {
-            markboardRef.value.toggleMaskMode()
-            maskModeText.value = 'Mask Mode'
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
           }
           toggleLoading() // Turn loading off
         })
@@ -198,8 +202,8 @@ function handleGenerativeFill(event) {
             typeof markboardRef.value.toggleMaskMode === 'function' &&
             markboardRef.value.maskMode
           ) {
-            markboardRef.value.toggleMaskMode()
-            maskModeText.value = 'Mask Mode'
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
           }
           toggleLoading() // Turn loading off
         })
@@ -349,18 +353,27 @@ const markboardUploadError = ref('')
           </div>
         </div>
       </div>
-      <button
-        class="mask-btn"
-        @click="handleToggleMaskMode"
-        style="margin: 24px auto 0 auto; display: block"
-      >
-        {{ maskModeText }}
-      </button>
-      <div>
-        <form @submit.prevent="handleGenerativeFill" v-if="maskModeOn">
-          <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-          <button type="submit">Generate</button>
-        </form>
+      <hr />
+      <div class="generative-fill">
+        <h2>AI Generative Fill</h2>
+        <p>Use AI to fill in areas of your drawing.</p>
+        <p>Enable Mask Mode to select areas for AI generation.</p>
+        <p>Powered by Clipdrop.co</p>
+        <p>How to use</p>
+        <div class="wrapper generative-fill-actions">
+          <button
+            class="mask-btn"
+            @click="handleToggleMaskMode"
+          >
+            {{ maskModeText }}
+          </button>
+          <div>
+            <form @submit.prevent="handleGenerativeFill" class="prompt-form">
+              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+              <button type="submit">Generate</button>
+            </form>
+          </div>
+        </div>
       </div>
     </main>
     <br />
@@ -515,5 +528,95 @@ header {
   margin-top: 2px;
   display: inline-block;
   vertical-align: middle;
+}
+
+.generative-fill {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 32px 24px 24px 24px;
+  margin: 32px auto 24px auto;
+  max-width: 1080px;
+  width: 1080px;
+}
+
+.generative-fill h2 {
+  margin-top: 0;
+  font-size: 1.6rem;
+  color: #1976d2;
+}
+
+.generative-fill-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start; /* Align items to the left */
+  gap: 20px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-top: 18px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.generative-fill-actions .mask-btn {
+  margin: 0;
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.generative-fill-actions .mask-btn:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.generative-fill-actions input[type="text"] {
+  font-size: 1rem;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1.5px solid #bdbdbd;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  min-width: 600px;
+  max-width: 800px;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+}
+
+.generative-fill-actions input[type="text"]:focus {
+  border-color: #1976d2;
+}
+
+.generative-fill-actions button[type="submit"] {
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-left: 8px;
+}
+
+.generative-fill-actions button[type="submit"]:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.prompt-form {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 8px;
+  width: 100%;
 }
 </style>
