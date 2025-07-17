@@ -164,7 +164,7 @@ function handleGenerativeFill(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch('http://localhost:3001/api/ai_fill/', {
+      fetch('http://localhost:3001/api/ai_fill/generative-fill/', {
         method: 'POST',
         body: formData,
       })
@@ -208,6 +208,53 @@ function handleGenerativeFill(event) {
           toggleLoading() // Turn loading off
         })
     })
+  })
+}
+
+function handleAIReimagine (event) {
+  event.preventDefault()
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'image.jpg')
+    formData.append('imageMime', 'image/jpeg')
+
+    fetch('http://localhost:3001/api/ai_fill/reimagine/', {
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => {
+            alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+            throw new Error('AI Fill failed')
+          })
+        }
+        return res.blob()
+      })
+      .then((blob) => {
+        if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+          markboardRef.value.setImageOnMarkboard(blob)
+        }
+        toggleLoading() // Turn loading off
+      })
+      .catch((err) => {
+        if (err.message !== 'AI Fill failed') {
+          alert('AI Fill failed: ' + err.message)
+        }
+        toggleLoading() // Turn loading off
+      })
   })
 }
 

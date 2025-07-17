@@ -9,7 +9,7 @@ const upload = multer();
 
 const clipdropApiKey = process.env.CLIPDROP_API_KEY;
 
-aiFillRouter.post('/', upload.fields([
+aiFillRouter.post('/generative-fill', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'mask', maxCount: 1 }
 ]), async (req, res) => {
@@ -44,6 +44,46 @@ aiFillRouter.post('/', upload.fields([
         body: form,
     })
     .then(response => response.arrayBuffer())
+    .then(buffer => {
+        // buffer here is a binary representation of the returned image
+        res.set('Content-Type', 'image/jpeg'); // Response is always JPEG
+        res.status(200).send(Buffer.from(buffer));
+    })
+    .catch(err => {
+        res.status(500).json({ error: err.message });
+    });
+});
+
+aiFillRouter.post('/reimagine', upload.fields([
+    { name: 'image', maxCount: 1 }
+]), async (req, res) => {
+    const image = req.files?.image?.[0]
+
+    if (!clipdropApiKey) {
+        return res.status(500).json({ error: 'ClipDrop API key not configured' });
+    }
+    if (!image) {
+        return res.status(400).json({ error: 'Image is required' });
+    }
+
+    const form = new FormData()
+    form.append(
+      'image_file',
+      new File([image.buffer], image.originalname, { type: image.mimetype })
+    )
+
+
+    fetch('https://clipdrop-api.co/reimagine/v1/reimagine', {
+        method: 'POST',
+        headers: {
+            'x-api-key': clipdropApiKey,
+        },
+        body: form,
+    })
+    .then(response => {
+        console.log('ClipDrop response:', response.status, response.statusText)
+        return response.arrayBuffer()
+    })
     .then(buffer => {
         // buffer here is a binary representation of the returned image
         res.set('Content-Type', 'image/jpeg'); // Response is always JPEG
