@@ -29,3 +29,7 @@ export function sendPaint(paint) {
 export function sendMarkboard(markboard) {
   socket.emit('markboard', markboard)
 }
+
+export function requestMarkboard() {
+  socket.emit('markboardReq', true)
+}
