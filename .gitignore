@@ -29,8 +29,10 @@ coverage
 
 *.tsbuildinfo
 
+
 # Secrets
 server/google.json.nogit
+server/secrets.js
 
 # Test DB
 server/markit.sqlite

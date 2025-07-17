@@ -3,6 +3,7 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import session from 'express-session'
+import { SESSION_SECRET } from './secrets.js'
 import passport from 'passport'
 import { readFileSync } from 'fs'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
@@ -10,6 +11,7 @@ import { oauthRouter } from './routers/oauth_router.js'
 import { usersRouter } from './routers/users_router.js'
 import { filesRouter } from './routers/files_router.js'
 import { aiFillRouter } from './routers/ai_fill_router.js'
+import { paymentRouter } from './routers/payment_router.js'
 import { User } from './models/user.js'
 
 const PORT = 3001
@@ -25,7 +27,7 @@ app.use(
 
 app.use(
   session({
-    secret: 'markitmarkitmarkit',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   }),
@@ -66,10 +68,14 @@ passport.use(
   }),
 )
 
+// // For Stripe webhooks)
+// app.use('/api/payment/webhook', express.raw({ type: 'application/json' }))
+
 app.use('/auth/', oauthRouter)
 app.use('/api/users/', usersRouter)
 app.use('/api/files/', filesRouter)
 app.use('/api/ai_fill/', aiFillRouter)
+app.use('/api/payment/', paymentRouter)
 
 app.listen(PORT, (err) => {
   if (err) console.log(err)

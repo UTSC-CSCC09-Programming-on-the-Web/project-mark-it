@@ -2,6 +2,7 @@
 import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
 import TopBar from './components/TopBar.vue'
+import Payment from './components/PaymentComponent.vue'
 import { ref, onMounted } from 'vue'
 
 
@@ -24,6 +25,7 @@ const fileInput = ref(null)
 const userFiles = ref([]) // Store user's files
 const selectedFileId = ref('')
 const shareGoogleId = ref('')
+const showPayment = ref(false)
 
 // Fetch user's files on mount
 async function fetchUserFiles() {
