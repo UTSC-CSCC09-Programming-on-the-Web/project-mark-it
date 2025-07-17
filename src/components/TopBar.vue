@@ -1,10 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import PaymentComponent from './PaymentComponent.vue'
+import Payment from './PaymentComponent.vue'
 
 const user = ref({ googleId: null, displayName: null })
 const userLoading = ref(true)
-const showPayment = ref(false)
 
 async function fetchUser() {
   userLoading.value = true
@@ -30,9 +29,9 @@ onMounted(fetchUser)
     <div class="top-bar-content">
       <span class="app-title">Mark It</span>
       <div class="top-bar-actions">
+        <span class="welcome" v-if="user.googleId">Welcome, {{ user.displayName }}</span>
         <div>
-            <button @click="showPayment = true">Subscribe</button>
-            <Payment v-if="showPayment" />
+          <Payment/>
         </div>
         <span v-if="userLoading">...</span>
         <template v-else>
@@ -42,7 +41,6 @@ onMounted(fetchUser)
             </a>
           </template>
           <template v-else>
-            <span>Welcome, {{ user.displayName }}</span>
             <button @click="signOut">Sign Out</button>
           </template>
         </template>
@@ -97,5 +95,10 @@ onMounted(fetchUser)
 .top-bar-actions button:hover {
   background: #fff;
   color: #1976d2;
+}
+.welcome {
+  font-size: 1rem;
+  color: #000;
+  margin-right: 12px;
 }
 </style>

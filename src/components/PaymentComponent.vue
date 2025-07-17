@@ -1,7 +1,6 @@
 <template>
   <div>
-    <h3>Subscription to Mark-it for $2.00 a month</h3>
-    <button @click="createCheckoutSession">Checkout</button>
+    <button @click="createCheckoutSession">Subscribe with Stripe</button>
   </div>
 </template>
 
@@ -21,4 +20,19 @@ export default {
 }
 </script>
 
-
+<style>
+button {
+  font-size: 1rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+button:hover {
+  background: #fff;
+  color: #1976d2;
+}
+</style>

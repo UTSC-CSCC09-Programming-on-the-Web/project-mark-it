@@ -2,7 +2,6 @@
 import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
 import TopBar from './components/TopBar.vue'
-import Payment from './components/PaymentComponent.vue'
 import { ref, onMounted } from 'vue'
 
 
@@ -25,7 +24,6 @@ const fileInput = ref(null)
 const userFiles = ref([]) // Store user's files
 const selectedFileId = ref('')
 const shareGoogleId = ref('')
-const showPayment = ref(false)
 
 // Fetch user's files on mount
 async function fetchUserFiles() {
@@ -357,7 +355,7 @@ function handleColorChange(newColor) {
 
 function handleRoomJoin(roomName) {
   console.log('Joining room:', roomName)
-  
+
 }
 
 function handleClearMarkboard() {
@@ -440,12 +438,12 @@ const markboardUploadError = ref('')
       <h1>Credits:</h1>
       <ul>
         <li>
-          The Stripe structure and code in payment_router.js, PaymentComponent.vue, 
+          The Stripe structure and code in payment_router.js, PaymentComponent.vue,
           SuccessPage.vue, and CancelPage.vue obtained from:
           <a href="https://docs.stripe.com/billing/quickstart?lang=node"
             >Stripe Checkout</a
           >
-          and 
+          and
           <a href="https://docs.stripe.com/error-handling"
             >Stripe Error Handling Documentation</a
           >
