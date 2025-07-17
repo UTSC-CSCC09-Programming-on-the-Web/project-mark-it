@@ -403,10 +403,17 @@ const markboardUploadError = ref('')
       <hr />
       <div class="generative-fill">
         <h2>AI Generative Fill</h2>
-        <p>Use AI to fill in areas of your drawing.</p>
-        <p>Enable Mask Mode to select areas for AI generation.</p>
         <p>Powered by Clipdrop.co</p>
-        <p>How to use</p>
+        <span class="how-to-use-tooltip">
+          How to use
+          <span class="how-to-use-popup">
+            <strong>Instructions:</strong><br>
+            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
+            2. Enter a prompt describing what you want.<br>
+            3. Click <b>Generate</b>.<br>
+            4. Wait for the AI to fill the masked area.<br>
+          </span>
+        </span>
         <div class="wrapper generative-fill-actions">
           <button
             class="mask-btn"
@@ -665,5 +672,39 @@ header {
   flex: 1 1 auto;
   gap: 8px;
   width: 100%;
+}
+
+.how-to-use-tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.how-to-use-popup {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 120%;
+  transform: translateX(-20%);
+  background: #fff;
+  color: #222;
+  border: 1.5px solid #1976d2;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 16px 20px;
+  min-width: 600px;   /* Increased from 260px */
+  max-width: 800px;   /* Optional: prevents it from getting too wide */
+  width: 100%;        /* Ensures it fills up to max-width */
+  z-index: 10;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.how-to-use-tooltip:hover .how-to-use-popup,
+.how-to-use-tooltip:focus .how-to-use-popup {
+  display: block;
 }
 </style>
