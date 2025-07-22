@@ -2,12 +2,12 @@
 // https://docs.stripe.com/billing/quickstart?lang=node
 // as mentioned in the project description
 
+import 'dotenv/config'
 import { Router } from 'express'
 import Stripe from 'stripe'
-import { STRIPE_TEST_SECRET } from '../secrets.js'
 
 // Sandbox test secret key
-const stripe = new Stripe(STRIPE_TEST_SECRET)
+const stripe = new Stripe(process.env.STRIPE_TEST_SECRET)
 
 export const paymentRouter = Router()
 
