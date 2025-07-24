@@ -2,13 +2,15 @@
 import { ref, onMounted } from 'vue'
 import Payment from './PaymentComponent.vue'
 
+const backendUrl = 'http://localhost:3001'
+
 const user = ref({ googleId: null, displayName: null })
 const userLoading = ref(true)
 
 async function fetchUser() {
   userLoading.value = true
   try {
-    const res = await fetch('http://localhost:3001/api/users/me', { credentials: 'include' })
+    const res = await fetch(`${backendUrl}/api/users/me`, { credentials: 'include' })
     user.value = await res.json()
   } catch (e) {
     user.value = { googleId: null, displayName: null }
@@ -17,7 +19,7 @@ async function fetchUser() {
 }
 
 async function signOut() {
-  await fetch('http://localhost:3001/api/users/signout', { credentials: 'include' })
+  await fetch(`${backendUrl}/api/users/signout`, { credentials: 'include' })
   await fetchUser()
 }
 
@@ -36,7 +38,7 @@ onMounted(fetchUser)
         <span v-if="userLoading">...</span>
         <template v-else>
           <template v-if="!user.googleId">
-            <a href="http://localhost:3001/auth/google">
+            <a :href="`${backendUrl}/auth/google`">
               <button id="oauth">Sign In With Google</button>
             </a>
           </template>

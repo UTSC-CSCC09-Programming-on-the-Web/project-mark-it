@@ -5,10 +5,12 @@
 </template>
 
 <script>
+const backendUrl = 'http://localhost:3001'
+
 export default {
   methods: {
     async createCheckoutSession() {
-      const response = await fetch('http://localhost:3001/api/payment/create-checkout-session', {
+      const response = await fetch(`${backendUrl}/api/payment/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lookup_key: 'markit_monthly_subscription' })

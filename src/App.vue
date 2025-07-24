@@ -4,12 +4,13 @@ import ToolBar from './components/ToolBar.vue'
 import TopBar from './components/TopBar.vue'
 import { ref, onMounted } from 'vue'
 
+const backendUrl = 'http://localhost:3001' //replace after deployment
 
 // For testing only (remove later)
 // This function fetches the current user's data from the server
 // and logs it to the console.
 function testMe() {
-  fetch('http://localhost:3001/api/users/me', {
+  fetch(`${backendUrl}/api/users/me`, {
     credentials: 'include',
   })
     .then((res) => res.json())
@@ -28,7 +29,7 @@ const shareGoogleId = ref('')
 // Fetch user's files on mount
 async function fetchUserFiles() {
   try {
-    const res = await fetch('http://localhost:3001/api/files/', {
+    const res = await fetch(`${backendUrl}/api/files/`, {
       credentials: 'include',
     })
     if (res.ok) {
@@ -55,7 +56,7 @@ async function uploadFile(event) {
   const formData = new FormData()
   formData.append('file', file)
   try {
-    const res = await fetch('http://localhost:3001/api/files/', {
+    const res = await fetch(`${backendUrl}/api/files/`, {
       method: 'POST',
       body: formData,
       credentials: 'include',
@@ -81,7 +82,7 @@ function handleDownload(event) {
     return
   }
   // Create a temporary link to trigger download
-  const url = `http://localhost:3001/api/files/download/${selectedFileId.value}`
+  const url = `${backendUrl}/api/files/download/${selectedFileId.value}`
   const link = document.createElement('a')
   link.href = url
   link.target = '_blank'
@@ -96,7 +97,7 @@ async function handleShare(event) {
     return
   }
   try {
-    const res = await fetch(`http://localhost:3001/api/files/share/${selectedFileId.value}`, {
+    const res = await fetch(`${backendUrl}/api/files/share/${selectedFileId.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -164,7 +165,7 @@ function handleGenerativeFill(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch('http://localhost:3001/api/ai_fill/generative-fill/', {
+      fetch(`${backendUrl}/api/ai_fill/generative-fill/`, {
         method: 'POST',
         body: formData,
       })
@@ -230,7 +231,7 @@ function handleAIReimagine (event) {
     formData.append('image', imageBlob, 'image.jpg')
     formData.append('imageMime', 'image/jpeg')
 
-    fetch('http://localhost:3001/api/ai_fill/reimagine/', {
+    fetch(`${backendUrl}/api/ai_fill/reimagine/`, {
       method: 'POST',
       body: formData,
     })
@@ -255,6 +256,90 @@ function handleAIReimagine (event) {
         }
         toggleLoading() // Turn loading off
       })
+  })
+}
+
+function handleGenerativeFillV2(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!maskModeOn) {
+    alert('Please enable mask mode to use generative fill.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    markboardRef.value.getMaskPngBlob().then((maskBlob) => {
+      if (!maskBlob) {
+        alert('Could not get mask from maskboard.')
+        toggleLoading()
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('prompt', aiPrompt.value)
+      formData.append('image', imageBlob, 'image.jpg')
+      formData.append('mask', maskBlob, 'mask.png')
+      formData.append('imageMime', 'image/jpeg')
+      formData.append('maskMime', 'image/png')
+
+      fetch(`${backendUrl}/api/ai_fill/generative-fill-v2/`, {
+        method: 'POST',
+        body: formData,
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+              throw new Error('AI Fill failed')
+            })
+          }
+          return res.json()
+        })
+        .then((data) => {
+          if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+            markboardRef.value.setImageOnMarkboard(data[0])
+          }
+          // Turn off mask mode after generation
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+        .catch((err) => {
+          if (err.message !== 'AI Fill failed') {
+            alert('AI Fill failed: ' + err.message)
+          }
+          // Also turn off mask mode on error
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+    })
   })
 }
 
