@@ -5,6 +5,8 @@
 import 'dotenv/config'
 import { Router } from 'express'
 import Stripe from 'stripe'
+import { User } from '../models/user.js'
+import { requireAuth } from '../middleware/auth.js'
 
 // Sandbox test secret key
 const stripe = new Stripe(process.env.STRIPE_TEST_SECRET)
@@ -13,20 +15,25 @@ export const paymentRouter = Router()
 
 const FRONTEND_DOMAIN = 'http://localhost:5173'
 
-paymentRouter.post('/create-checkout-session', async (req, res) => {
+paymentRouter.post('/create-checkout-session', requireAuth, async (req, res) => {
   try {
     const { lookup_key } = req.body
-
     if (!lookup_key) return res.status(400).json({ error: 'Missing lookup key' })
-
-    const prices = await stripe.prices.list({
-      lookup_keys: [lookup_key],
-      expand: ['data.product'],
-    })
-
+    const prices = await stripe.prices.list({ lookup_keys: [lookup_key] })
     if (!prices.data || prices.data.length === 0) return res.status(404).json({ error: 'Price not found' })
 
+    let customerId
+    if (req.user.customerId) customerId = req.user.customerId
+    else {
+      const customer = await stripe.customers.create({
+        metadata: { googleId: req.user.googleId, userId: req.user.id.toString() }
+      })
+      customerId = customer.id
+      await User.update({ customerId: customer.id }, { where: { id: req.user.id } })
+    }
+
     const session = await stripe.checkout.sessions.create({
+      customer: customerId,
       billing_address_collection: 'auto',
       line_items: [
         {
@@ -38,60 +45,93 @@ paymentRouter.post('/create-checkout-session', async (req, res) => {
       success_url: `${FRONTEND_DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${FRONTEND_DOMAIN}/cancel`,
     })
-
     res.json({ url: session.url })
   } catch (err) {
-    // Code obtained from:
-    // https://docs.stripe.com/error-handling
-    console.log(err)
-    switch (err.type) {
-      case 'StripeCardError':
-        res.status(400).json({ error: 'Payment error' })
-        break
-      case 'StripeInvalidRequestError':
-        res.status(400).json({ error: 'Invalid request' })
-        break
-      case 'StripeAPIError':
-        res.status(500).json({ error: 'Something went wrong with Stripe' })
-        break
-      default:
-        res.status(500).json({ error: 'An unexpected error occurred' })
-        break
-    }
+    console.error('Error creating checkout session:', err)
+    res.status(500).json({ error: 'Failed to create checkout session' })
   }
 })
 
-paymentRouter.post('/create-portal-session', async (req, res) => {
+// Stripe webhooks
+paymentRouter.post('/webhook', async (req, res) => {
+  const sig = req.headers['stripe-signature']
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+  let event
+
   try {
-    const { session_id } = req.body
-
-    if (!session_id) return res.status(400).json({ error: 'Missing session id' })
-
-    const checkoutSession = await stripe.checkout.sessions.retrieve(session_id)
-
-    if (!checkoutSession.customer)
-      return res.status(400).json({ error: 'No session customer' })
-
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: checkoutSession.customer,
-      return_url: FRONTEND_DOMAIN,
-    })
-
-    res.json({ url: portalSession.url })
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
   } catch (err) {
-    // Code obtained from:
-    // https://docs.stripe.com/error-handling
-    console.log(err)
-    switch (err.type) {
-      case 'StripeInvalidRequestError':
-        res.status(400).json({ error: 'Invalid request' })
+    console.error('Webhook signature verification failed:', err.message)
+    return res.status(400).send(`Webhook Error: ${err.message}`)
+  }
+
+  try {
+    switch (event.type) {
+      case 'customer.subscription.created':
+        const createdSubscription = event.data.object
+        if (createdSubscription.status === 'active') {
+          await User.update({ isSubscribed: true }, { where: { customerId: createdSubscription.customer } })
+          console.log(`New subscription activated for customer: ${createdSubscription.customer}`)
+        }
         break
-      case 'StripeAPIError':
-        res.status(500).json({ error: 'Something went wrong with Stripe' })
+      case 'customer.subscription.updated':
+        const updatedSubscription = event.data.object
+        if (updatedSubscription.status === 'active') {
+          await User.update({ isSubscribed: true }, { where: { customerId: updatedSubscription.customer } })
+          console.log(`Subscription activated for customer: ${updatedSubscription.customer}`)
+        } else if (updatedSubscription.status === 'canceled' || updatedSubscription.status === 'incomplete_expired') {
+          await User.update({ isSubscribed: false }, { where: { customerId: updatedSubscription.customer } })
+          console.log(`Subscription deactivated for customer: ${updatedSubscription.customer}`)
+        }
+        break
+      case 'customer.subscription.deleted':
+        const deletedSubscription = event.data.object
+        await User.update({ isSubscribed: false }, { where: { customerId: deletedSubscription.customer } })
+        console.log(`Subscription deleted for customer: ${deletedSubscription.customer}`)
+        break
+      case 'invoice.payment_failed':
+        const failedInvoice = event.data.object
+        await User.update({ isSubscribed: false }, { where: { customerId: failedInvoice.customer } })
+        console.log(`Payment failed for customer: ${failedInvoice.customer}`)
         break
       default:
-        res.status(500).json({ error: 'An unexpected error occurred' })
-        break
+        console.log(`Unhandled event type ${event.type}`)
     }
+  } catch (error) {
+    console.error('Error processing webhook:', error)
+    return res.status(500).json({ error: 'Webhook processing failed' })
+  }
+
+  res.json({ received: true })
+})
+
+// Check subscription status
+paymentRouter.get('/subscription-status', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    res.json({ isSubscribed: user.isSubscribed, customerId: user.customerId })
+  } catch (error) {
+    console.error('Error finding subscription:', error)
+    res.status(500).json({ error: 'Failed to get subscription status' })
   }
 })
+
+// Cancel subscription
+paymentRouter.post('/cancel-subscription', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id)
+    if (!user || !user.customerId) return res.status(400).json({ error: 'No customer found' })
+    const subscriptions = await stripe.subscriptions.list({ customer: user.customerId, status: 'active' })
+    if (subscriptions.data.length === 0) return res.status(400).json({ error: 'No active subscription found' })
+    const subscription = subscriptions.data[0]
+    await stripe.subscriptions.cancel(subscription.id)
+    await User.update({ isSubscribed: false }, { where: { id: user.id } })
+    res.json({ success: true, message: 'Subscription cancelled' })
+  } catch (error) {
+    console.error('Error cancelling subscription:', error)
+    res.status(500).json({ error: 'Failed to cancel subscription' })
+  }
+})
+
+export default paymentRouter
