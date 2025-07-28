@@ -1,24 +1,38 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import Payment from './PaymentComponent.vue'
 
+const emit = defineEmits(['unsubscribe'])
+
+const API_BASE_URL = 'http://localhost:3001'
 const user = ref({ googleId: null, displayName: null })
 const userLoading = ref(true)
 
 async function fetchUser() {
   userLoading.value = true
   try {
-    const res = await fetch('http://localhost:3001/api/users/me', { credentials: 'include' })
+    const res = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: 'include' })
     user.value = await res.json()
-  } catch (e) {
+  } catch (error) {
+    console.error('Error fetching user:', error)
     user.value = { googleId: null, displayName: null }
   }
   userLoading.value = false
 }
 
 async function signOut() {
-  await fetch('http://localhost:3001/api/users/signout', { credentials: 'include' })
-  await fetchUser()
+  try {
+    await fetch(`${API_BASE_URL}/api/users/signout`, { credentials: 'include' })
+    // Redirect to root which will be the login page
+    window.location.href = '/'
+  } catch (error) {
+    console.error('Error signing out:', error)
+    // Refresh even on error
+    window.location.href = '/'
+  }
+}
+
+function handleUnsubscribe() {
+  emit('unsubscribe')
 }
 
 onMounted(fetchUser)
@@ -30,17 +44,15 @@ onMounted(fetchUser)
       <span class="app-title">Mark It</span>
       <div class="top-bar-actions">
         <span class="welcome" v-if="user.googleId">Welcome, {{ user.displayName }}</span>
-        <div>
-          <Payment/>
-        </div>
         <span v-if="userLoading">...</span>
         <template v-else>
           <template v-if="!user.googleId">
-            <a href="http://localhost:3001/auth/google">
+            <a :href="`${API_BASE_URL}/auth/google`">
               <button id="oauth">Sign In With Google</button>
             </a>
           </template>
           <template v-else>
+            <button @click="handleUnsubscribe" title="Cancel your subscription">Unsubscribe</button>
             <button @click="signOut">Sign Out</button>
           </template>
         </template>
