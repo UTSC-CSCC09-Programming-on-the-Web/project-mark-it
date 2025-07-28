@@ -487,7 +487,7 @@ const markboardUploadError = ref('')
       </div>
       <div class="generative-fill">
         <h2>AI Generative Fill</h2>
-        <p>Powered by Clipdrop.co</p>
+        <p>Powered by Phot.ai</p>
         <span class="how-to-use-tooltip">
           How to use
           <span class="how-to-use-popup">
@@ -506,7 +506,7 @@ const markboardUploadError = ref('')
             {{ maskModeText }}
           </button>
           <div>
-            <form @submit.prevent="handleGenerativeFill" class="prompt-form">
+            <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
               <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
               <button type="submit">Generate</button>
             </form>
