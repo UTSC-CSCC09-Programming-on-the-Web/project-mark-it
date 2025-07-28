@@ -1,4 +1,7 @@
 import { User } from '../models/user.js'
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_TEST_SECRET)
 
 export function requireAuth(req, res, next) {
   if (!req.user) return res.status(401).json({ error: 'Not signed in' })
@@ -10,10 +13,25 @@ export async function requireSubscription(req, res, next) {
   try {
     const user = await User.findByPk(req.user.id)
     if (!user) return res.status(401).json({ error: 'User not found' })
-    if (!user.isSubscribed) return res.status(403).json({ error: 'User is not subscribed' })
+    if (!user.customerId) {
+      await User.update({ isSubscribed: false }, { where: { id: user.id } })
+      return res.status(403).json({ error: 'User is not subscribed' })
+    }
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.customerId,
+      status: 'active',
+      limit: 1
+    })
+    const hasActiveSubscription = subscriptions.data.length > 0
+
+    if (user.isSubscribed !== hasActiveSubscription)
+      await User.update({ isSubscribed: hasActiveSubscription }, { where: { id: user.id } })
+    if (!hasActiveSubscription) return res.status(403).json({ error: 'User is not subscribed' })
+
     next()
   } catch (error) {
-    console.error('Error finding subscription:', error)
+    console.error('Error checking subscription:', error)
     return res.status(500).json({ error: 'Unexpected error' })
   }
 }
