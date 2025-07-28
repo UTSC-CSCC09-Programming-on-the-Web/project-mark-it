@@ -52,6 +52,24 @@ paymentRouter.post('/create-checkout-session', requireAuth, async (req, res) => 
   }
 })
 
+// Create portal session
+paymentRouter.post('/create-portal-session', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id)
+    if (!user || !user.customerId) return res.status(400).json({ error: 'No customer found' })
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: user.customerId,
+      return_url: `${FRONTEND_DOMAIN}/`,
+    })
+
+    res.json({ url: portalSession.url })
+  } catch (error) {
+    console.error('Error creating portal session:', error)
+    res.status(500).json({ error: 'Failed to create portal session' })
+  }
+})
+
 // Stripe webhooks
 paymentRouter.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature']
@@ -110,7 +128,28 @@ paymentRouter.get('/subscription-status', requireAuth, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id)
     if (!user) return res.status(404).json({ error: 'User not found' })
-    res.json({ isSubscribed: user.isSubscribed, customerId: user.customerId })
+
+    if (!user.customerId) {
+      // No customer ID means no subscription
+      await User.update({ isSubscribed: false }, { where: { id: user.id } })
+      return res.json({ isSubscribed: false, customerId: null })
+    }
+
+    // Check active subscriptions directly from Stripe
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.customerId,
+      status: 'active',
+      limit: 1
+    })
+
+    const hasActiveSubscription = subscriptions.data.length > 0
+
+    // Update local database to match Stripe
+    if (user.isSubscribed !== hasActiveSubscription) {
+      await User.update({ isSubscribed: hasActiveSubscription }, { where: { id: user.id } })
+    }
+
+    res.json({ isSubscribed: hasActiveSubscription, customerId: user.customerId })
   } catch (error) {
     console.error('Error finding subscription:', error)
     res.status(500).json({ error: 'Failed to get subscription status' })
