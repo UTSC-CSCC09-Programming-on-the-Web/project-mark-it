@@ -1,4 +1,4 @@
-// Code obtained from:
+// Base code obtained from:
 // https://docs.stripe.com/billing/quickstart?lang=node
 // as mentioned in the project description
 

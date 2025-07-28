@@ -1,3 +1,7 @@
+// Base code obtained from:
+// https://docs.stripe.com/billing/quickstart?lang=node
+// as mentioned in the project description
+
 <template>
   <div class="cancel-container">
     <div class="cancel-content">
