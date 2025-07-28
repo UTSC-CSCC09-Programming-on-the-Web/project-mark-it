@@ -16,11 +16,17 @@ import { User } from './models/user.js'
 
 const PORT = 3001
 const app = express()
+
+// For Stripe webhooks needs to be before bodyParser.json()
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }))
 app.use(bodyParser.json())
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      process.env.FRONTEND_DOMAIN,
+    ].filter(Boolean),
     credentials: true,
   }),
 )
@@ -67,9 +73,6 @@ passport.use(
     }
   }),
 )
-
-// // For Stripe webhooks)
-// app.use('/api/payment/webhook', express.raw({ type: 'application/json' }))
 
 app.use('/auth/', oauthRouter)
 app.use('/api/users/', usersRouter)

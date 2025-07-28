@@ -13,7 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_TEST_SECRET)
 
 export const paymentRouter = Router()
 
-const FRONTEND_DOMAIN = 'http://localhost:5173'
+const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN || 'http://localhost:5173'
 
 paymentRouter.post('/create-checkout-session', requireAuth, async (req, res) => {
   try {
