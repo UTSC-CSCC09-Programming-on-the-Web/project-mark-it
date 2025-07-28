@@ -11,4 +11,12 @@ export const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  customerId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  isSubscribed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 })

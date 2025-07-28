@@ -3,13 +3,14 @@ import 'dotenv/config';
 import { FormData, File } from 'formdata-node';
 import fetch from 'node-fetch';
 import multer from 'multer';
+import { requireSubscription } from '../middleware/auth.js';
 
 export const aiFillRouter = Router();
 const upload = multer();
 
 const clipdropApiKey = process.env.CLIPDROP_API_KEY;
 
-aiFillRouter.post('/generative-fill', upload.fields([
+aiFillRouter.post('/generative-fill', requireSubscription, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'mask', maxCount: 1 }
 ]), async (req, res) => {
@@ -54,7 +55,7 @@ aiFillRouter.post('/generative-fill', upload.fields([
     });
 });
 
-aiFillRouter.post('/reimagine', upload.fields([
+aiFillRouter.post('/reimagine', requireSubscription, upload.fields([
     { name: 'image', maxCount: 1 }
 ]), async (req, res) => {
     const image = req.files?.image?.[0]
