@@ -6,6 +6,7 @@ import fetch from 'node-fetch';
 import multer from 'multer';
 import path from 'path'
 import fs from 'fs'
+import { requireSubscription } from '../middleware/auth.js';
 
 const axios = require('axios');
 const backendUrl = "https://localhost:3001"; // replace later after deployment
@@ -27,7 +28,7 @@ const upload = multer({
 const clipdropApiKey = process.env.CLIPDROP_API_KEY;
 const photaiApiKey = process.env.PHOTAI_API_KEY;
 
-aiFillRouter.post('/generative-fill', upload.fields([
+aiFillRouter.post('/generative-fill', requireSubscription, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'mask', maxCount: 1 }
 ]), async (req, res) => {
@@ -72,7 +73,7 @@ aiFillRouter.post('/generative-fill', upload.fields([
     });
 });
 
-aiFillRouter.post('/reimagine', upload.fields([
+aiFillRouter.post('/reimagine', requireSubscription, upload.fields([
     { name: 'image', maxCount: 1 }
 ]), async (req, res) => {
     const image = req.files?.image?.[0]
@@ -112,7 +113,7 @@ aiFillRouter.post('/reimagine', upload.fields([
     });
 });
 
-aiFillRouter.post('/generative-fill-v2', upload.fields([
+aiFillRouter.post('/generative-fill-v2', requireSubscription, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'mask', maxCount: 1 }
 ]), async (req, res) => {

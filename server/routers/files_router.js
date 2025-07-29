@@ -5,6 +5,7 @@ import multer from 'multer'
 import path from 'path'
 import { Op } from 'sequelize'
 import fs from 'fs'
+import { requireSubscription } from '../middleware/auth.js'
 
 export const filesRouter = Router()
 
@@ -22,7 +23,7 @@ const upload = multer({
   },
 })
 
-filesRouter.post('/', upload.single('file'), async (req, res) => {
+filesRouter.post('/', requireSubscription, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' })
   }
@@ -41,7 +42,7 @@ filesRouter.post('/', upload.single('file'), async (req, res) => {
   return res.json(file)
 })
 
-filesRouter.get('/', async (req, res) => {
+filesRouter.get('/', requireSubscription, async (req, res) => {
   if (!req.user || !req.user.id) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -79,7 +80,7 @@ filesRouter.get('/', async (req, res) => {
   }
 })
 
-filesRouter.get('/my', async (req, res) => {
+filesRouter.get('/my', requireSubscription, async (req, res) => {
   if (!req.user || !req.user.id) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -91,7 +92,7 @@ filesRouter.get('/my', async (req, res) => {
   }
 })
 
-filesRouter.get('/download/:id', async (req, res) => {
+filesRouter.get('/download/:id', requireSubscription, async (req, res) => {
   if (!req.user || !req.user.id) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
@@ -115,7 +116,7 @@ filesRouter.get('/download/:id', async (req, res) => {
   res.download(filePath, file.file.originalname)
 })
 
-filesRouter.post('/share/:id', async (req, res) => {
+filesRouter.post('/share/:id', requireSubscription, async (req, res) => {
   if (!req.user || !req.user.id) {
     return res.status(401).json({ error: 'Unauthorized' })
   }

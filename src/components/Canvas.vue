@@ -14,8 +14,8 @@ const MARKBOARD_TYPE = {
   2: 'HTMLImageElement',
 }
 
-const canvaswidth = 1024
-const canvasheight = 768
+const canvaswidth = 1080
+const canvasheight = 720
 
 const markboard = ref()
 let context = null
