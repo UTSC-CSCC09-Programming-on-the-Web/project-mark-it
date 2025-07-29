@@ -8,7 +8,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "http://134.122.34.179:5173",
     methods: ["GET", "POST"]
   }
 });
@@ -34,5 +34,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(3000, () => {
-  console.log('server running at http://localhost:3000');
+  console.log('server running at http://134.122.34.179:3000');
 });

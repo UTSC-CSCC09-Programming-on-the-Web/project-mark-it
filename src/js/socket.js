@@ -6,7 +6,7 @@ export const state = reactive({
   paintBuffer: [],
 })
 
-const URL = 'http://localhost:3000'
+const URL = 'http://134.122.34.179:3000'
 
 export const socket = io(URL)
 
