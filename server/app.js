@@ -1,9 +1,9 @@
+import 'dotenv/config'
 import { sequelize } from './datasource.js'
 import express from 'express'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import session from 'express-session'
-import { SESSION_SECRET } from './secrets.js'
 import passport from 'passport'
 import { readFileSync } from 'fs'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
@@ -16,18 +16,24 @@ import { User } from './models/user.js'
 
 const PORT = 3001
 const app = express()
+
+// For Stripe webhooks needs to be before bodyParser.json()
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }))
 app.use(bodyParser.json())
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173',
+      process.env.FRONTEND_DOMAIN,
+    ].filter(Boolean),
     credentials: true,
   }),
 )
 
 app.use(
   session({
-    secret: SESSION_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   }),
@@ -67,9 +73,6 @@ passport.use(
     }
   }),
 )
-
-// // For Stripe webhooks)
-// app.use('/api/payment/webhook', express.raw({ type: 'application/json' }))
 
 app.use('/auth/', oauthRouter)
 app.use('/api/users/', usersRouter)

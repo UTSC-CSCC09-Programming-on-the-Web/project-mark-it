@@ -2,22 +2,121 @@
 import Markboard from './components/Canvas.vue'
 import ToolBar from './components/ToolBar.vue'
 import TopBar from './components/TopBar.vue'
+import PaymentComponent from './components/PaymentComponent.vue'
+import SuccessPage from './components/SuccessPage.vue'
+import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
 
+const API_BASE_URL = 'http://localhost:3001'
 
-// For testing only (remove later)
-// This function fetches the current user's data from the server
-// and logs it to the console.
-function testMe() {
-  fetch('http://localhost:3001/api/users/me', {
-    credentials: 'include',
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log(data)
-      alert('Your googleId: ' + data.googleId)
-    })
+// Stripe paywall and auth states
+const user = ref(null)
+const isLoading = ref(true)
+const showPaywall = ref(false)
+const showLoginPage = ref(false)
+const currentRoute = ref('')
+
+// Stripe paywall routes
+function getCurrentRoute() {
+  const path = window.location.pathname
+  if (path === '/success') return 'success'
+  if (path === '/cancel') return 'cancel'
+  return 'home'
 }
+
+// Check if user logged in and is subscribed
+async function checkAuthStatus() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/users/me`, { credentials: 'include' })
+    const userData = await res.json()
+
+    if (userData.googleId) {
+      user.value = userData
+      if (currentRoute.value === 'success' || currentRoute.value === 'cancel') return
+
+      const subscriptionRes = await fetch(`${API_BASE_URL}/api/payment/subscription-status`, { credentials: 'include' })
+      const subscriptionData = await subscriptionRes.json()
+
+      if (subscriptionRes.ok && subscriptionData.isSubscribed) {
+        user.value.isSubscribed = subscriptionData.isSubscribed
+        await fetchUserFiles()
+      }
+      else showPaywall.value = true
+    }
+    else {
+      if (currentRoute.value !== 'success' && currentRoute.value !== 'cancel') showLoginPage.value = true
+    }
+  } catch (error) {
+    console.error('Error checking auth status:', error)
+    if (currentRoute.value !== 'success' && currentRoute.value !== 'cancel') showLoginPage.value = true
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function handleGoogleLogin() {
+  window.location.href = `${API_BASE_URL}/auth/google`
+}
+
+async function handleSignout() {
+  try {
+    await fetch(`${API_BASE_URL}/api/users/signout`, { credentials: 'include' })
+    user.value = null
+    showPaywall.value = false
+    showLoginPage.value = true
+  } catch (error) {
+    console.error('Error signing out:', error)
+  }
+}
+
+function handleSubscriptionSuccess() {
+  showPaywall.value = false
+  checkAuthStatus()
+}
+
+function handleSubscriptionCancel() {
+  handleSignout()
+}
+
+async function handleUnsubscribe() {
+  if (!confirm('Are you sure you want to unsubscribe? You will lose access to all premium features.')) return
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/payment/cancel-subscription`, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    const data = await res.json()
+    if (res.ok) {
+      alert('Successfully unsubscribed. You can resubscribe anytime to regain access to premium features.')
+      // Redirect to subscription page
+      showPaywall.value = true
+      // Update user subscription status locally
+      if (user.value) user.value.isSubscribed = false
+    }
+    else alert('Failed to unsubscribe: ' + (data.error || 'Unknown error'))
+
+  } catch (error) {
+    console.error('Error unsubscribing:', error)
+    alert('Failed to unsubscribe: ' + error.message)
+  }
+}
+
+onMounted(() => {
+  currentRoute.value = getCurrentRoute()
+  if (currentRoute.value === 'success' || currentRoute.value === 'cancel') {
+    isLoading.value = false
+    checkAuthStatus()
+    return
+  }
+
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('showPaywall') === 'true') {
+    showPaywall.value = true
+    window.history.replaceState({}, document.title, window.location.pathname)
+  }
+  checkAuthStatus()
+})
 
 // File upload logic
 const fileInput = ref(null)
@@ -27,8 +126,13 @@ const shareGoogleId = ref('')
 
 // Fetch user's files on mount
 async function fetchUserFiles() {
+  if (!user.value || !user.value.isSubscribed) {
+    userFiles.value = []
+    return
+  }
+
   try {
-    const res = await fetch('http://localhost:3001/api/files/', {
+    const res = await fetch(`${API_BASE_URL}/api/files/`, {
       credentials: 'include',
     })
     if (res.ok) {
@@ -42,8 +146,6 @@ async function fetchUserFiles() {
   }
 }
 
-onMounted(fetchUserFiles)
-
 // After upload, refresh the list
 async function uploadFile(event) {
   event.preventDefault()
@@ -55,7 +157,7 @@ async function uploadFile(event) {
   const formData = new FormData()
   formData.append('file', file)
   try {
-    const res = await fetch('http://localhost:3001/api/files/', {
+    const res = await fetch(`${API_BASE_URL}/api/files/`, {
       method: 'POST',
       body: formData,
       credentials: 'include',
@@ -81,7 +183,7 @@ function handleDownload(event) {
     return
   }
   // Create a temporary link to trigger download
-  const url = `http://localhost:3001/api/files/download/${selectedFileId.value}`
+  const url = `${API_BASE_URL}/api/files/download/${selectedFileId.value}`
   const link = document.createElement('a')
   link.href = url
   link.target = '_blank'
@@ -96,7 +198,7 @@ async function handleShare(event) {
     return
   }
   try {
-    const res = await fetch(`http://localhost:3001/api/files/share/${selectedFileId.value}`, {
+    const res = await fetch(`${API_BASE_URL}/api/files/share/${selectedFileId.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -164,7 +266,7 @@ function handleGenerativeFill(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch('http://localhost:3001/api/ai_fill/generative-fill/', {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill/`, {
         method: 'POST',
         body: formData,
       })
@@ -211,53 +313,6 @@ function handleGenerativeFill(event) {
   })
 }
 
-function handleAIReimagine (event) {
-  event.preventDefault()
-  if (!markboardRef.value) {
-    alert('Markboard not ready.')
-    return
-  }
-
-  toggleLoading() // Turn loading on
-
-  markboardRef.value.getJpegBlob().then((imageBlob) => {
-    if (!imageBlob) {
-      alert('Could not get image from markboard.')
-      toggleLoading()
-      return
-    }
-    const formData = new FormData()
-    formData.append('image', imageBlob, 'image.jpg')
-    formData.append('imageMime', 'image/jpeg')
-
-    fetch('http://localhost:3001/api/ai_fill/reimagine/', {
-      method: 'POST',
-      body: formData,
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((err) => {
-            alert('AI Fill failed: ' + (err.error || 'Unknown error'))
-            throw new Error('AI Fill failed')
-          })
-        }
-        return res.blob()
-      })
-      .then((blob) => {
-        if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
-          markboardRef.value.setImageOnMarkboard(blob)
-        }
-        toggleLoading() // Turn loading off
-      })
-      .catch((err) => {
-        if (err.message !== 'AI Fill failed') {
-          alert('AI Fill failed: ' + err.message)
-        }
-        toggleLoading() // Turn loading off
-      })
-  })
-}
-
 function handleDownloadMarkboard() {
   if (markboardRef.value) {
     markboardRef.value.getJpegBlob().then((blob) => {
@@ -291,27 +346,6 @@ function handleDownloadMaskboard() {
     })
   } else {
     alert('Mask mode is not enabled.')
-  }
-}
-
-const testImageUrl = ref('')
-
-function testSetImage(event) {
-  event.preventDefault()
-  if (!testImageUrl.value) {
-    alert('Please enter an image URL.')
-    return
-  }
-  const img = new Image()
-  img.crossOrigin = 'anonymous' // Allow loading from external sources
-  img.src = testImageUrl.value
-  img.onload = () => {
-    if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
-      markboardRef.value.setImageOnMarkboard(img)
-    }
-  }
-  img.onerror = () => {
-    alert('Failed to load image.')
   }
 }
 
@@ -370,93 +404,201 @@ const markboardUploadError = ref('')
 </script>
 
 <template>
-  <TopBar />
-  <div class="main">
-    <main>
-      <div class="markboard-title">
-        <h1>Markboard</h1>
-        <p>Click and drag to draw</p>
-      </div>
-      <Markboard ref="markboardRef" :color="color" />
-      <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
-      <div v-if="loading" class="loading-title">Loading...</div>
-      <div class="markboard-controls">
-        <div class="wrapper">
-          <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
-          <div class="markboard-actions">
-            <form @submit="handleUploadToMarkboard" class="upload-form">
-              <label class="file-label">
-                <input type="file" ref="markboardFileInput" @change="updateFileName" />
-                <span class="file-label-text">Choose File</span>
-              </label>
-              <span class="file-name">{{ chosenFileName }}</span>
-              <button type="submit">Upload to Markboard</button>
-            </form>
-            <span v-if="markboardUploadError" class="input-error">{{ markboardUploadError }}</span>
-            <div class="markboard-actions-bottom">
-              <button @click="handleDownloadMarkboard">Download Markboard</button>
-              <button @click="handleClearMarkboard">Clear Markboard</button>
+  <!-- Success page -->
+  <SuccessPage v-if="currentRoute === 'success'" />
+
+  <!-- Cancel page -->
+  <CancelPage v-else-if="currentRoute === 'cancel'" />
+
+  <!-- Loading state -->
+  <div v-else-if="isLoading" class="loading-container">
+    <h2>Loading...</h2>
+  </div>
+
+  <!-- Login page for unauthenticated users -->
+  <div v-else-if="showLoginPage" class="login-container">
+    <div class="login-content">
+      <h1>Welcome to Mark-It</h1>
+      <p>Please sign in to access the application</p>
+      <button @click="handleGoogleLogin" class="google-login-btn">
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Paywall for authenticated but unsubscribed users -->
+  <div v-else-if="showPaywall" class="paywall-container">
+    <div class="paywall-content">
+      <h1>Subscribe to Mark-It</h1>
+      <p>To access all features of Mark-It, please subscribe to our service.</p>
+      <PaymentComponent @success="handleSubscriptionSuccess" @cancel="handleSubscriptionCancel" />
+      <button @click="handleSignout" class="signout-btn">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Main application for authenticated and subscribed users -->
+  <div v-else>
+    <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
+    <div class="main">
+      <main>
+        <div class="markboard-title">
+          <h1>Markboard</h1>
+          <p>Click and drag to draw</p>
+        </div>
+        <Markboard ref="markboardRef" :color="color" />
+        <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
+        <div v-if="loading" class="loading-title">Loading...</div>
+        <div class="markboard-controls">
+          <div class="wrapper">
+            <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
+            <div class="markboard-actions">
+              <form @submit="handleUploadToMarkboard" class="upload-form">
+                <label class="file-label">
+                  <input type="file" ref="markboardFileInput" @change="updateFileName" />
+                  <span class="file-label-text">Choose File</span>
+                </label>
+                <span class="file-name">{{ chosenFileName }}</span>
+                <button type="submit">Upload to Markboard</button>
+              </form>
+              <span v-if="markboardUploadError" class="input-error">{{ markboardUploadError }}</span>
+              <div class="markboard-actions-bottom">
+                <button @click="handleDownloadMarkboard">Download Markboard</button>
+                <button @click="handleClearMarkboard">Clear Markboard</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="generative-fill">
-        <h2>AI Generative Fill</h2>
-        <p>Powered by Clipdrop.co</p>
-        <span class="how-to-use-tooltip">
-          How to use
-          <span class="how-to-use-popup">
-            <strong>Instructions:</strong><br>
-            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
-            2. Enter a prompt describing what you want.<br>
-            3. Click <b>Generate</b>.<br>
-            4. Wait for the AI to fill the masked area.<br>
+        <div class="generative-fill">
+          <h2>AI Generative Fill</h2>
+          <p>Powered by Clipdrop.co</p>
+          <span class="how-to-use-tooltip">
+            How to use
+            <span class="how-to-use-popup">
+              <strong>Instructions:</strong><br>
+              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
+              2. Enter a prompt describing what you want.<br>
+              3. Click <b>Generate</b>.<br>
+              4. Wait for the AI to fill the masked area.<br>
+            </span>
           </span>
-        </span>
-        <div class="wrapper generative-fill-actions">
-          <button
-            class="mask-btn"
-            @click="handleToggleMaskMode"
-          >
-            {{ maskModeText }}
-          </button>
-          <div>
-            <form @submit.prevent="handleGenerativeFill" class="prompt-form">
-              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-              <button type="submit">Generate</button>
-            </form>
+          <div class="wrapper generative-fill-actions">
+            <button
+              class="mask-btn"
+              @click="handleToggleMaskMode"
+            >
+              {{ maskModeText }}
+            </button>
+            <div>
+              <form @submit.prevent="handleGenerativeFill" class="prompt-form">
+                <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+                <button type="submit">Generate</button>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
-    <br />
-    <br />
-    <br />
-  </div>
-  <footer>
-    <div class="footer-content">
-      <h1>Credits:</h1>
-      <ul>
-        <li>
-          The Stripe structure and code in payment_router.js, PaymentComponent.vue,
-          SuccessPage.vue, and CancelPage.vue obtained from:
-          <a href="https://docs.stripe.com/billing/quickstart?lang=node"
-            >Stripe Checkout</a
-          >
-          and
-          <a href="https://docs.stripe.com/error-handling"
-            >Stripe Error Handling Documentation</a
-          >
-        </li>
-        <li>
-          GitHub Copilot inline code suggestions were used to help complete the code.
-        </li>
-      </ul>
+      </main>
+      <br />
+      <br />
+      <br />
     </div>
-  </footer>
+    <footer>
+      <div class="footer-content">
+        <h1>Credits:</h1>
+        <ul>
+          <li>
+            The Stripe structure and code in payment_router.js, PaymentComponent.vue,
+            SuccessPage.vue, and CancelPage.vue obtained from:
+            <a href="https://docs.stripe.com/billing/quickstart?lang=node"
+              >Stripe Checkout</a
+            >
+            and
+            <a href="https://docs.stripe.com/error-handling"
+              >Stripe Error Handling Documentation</a
+            >
+          </li>
+          <li>
+            GitHub Copilot inline code suggestions were used to help complete the code.
+          </li>
+        </ul>
+      </div>
+    </footer>
+  </div>
 </template>
 
 <style scoped>
+/* Loading, Login, and Paywall Styles */
+.loading-container,
+.login-container,
+.paywall-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.login-content,
+.paywall-content {
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid #e2e8f0;
+}
+
+.login-content h1,
+.paywall-content h1 {
+  color: #1976d2;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.login-content p,
+.paywall-content p {
+  color: #64748b;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.google-login-btn,
+.signout-btn {
+  background: #1976d2;
+  color: white;
+  border: 1px solid #1976d2;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin: 0.5rem;
+}
+
+.google-login-btn:hover {
+  background: #fff;
+  color: #1976d2;
+}
+
+.signout-btn {
+  background: #64748b;
+  border-color: #64748b;
+  margin-top: 1rem;
+}
+
+.signout-btn:hover {
+  background: #fff;
+  color: #64748b;
+}
+
+.loading-container h2 {
+  color: #1976d2;
+  font-size: 2rem;
+}
+
 header {
   line-height: 1.5;
 }
