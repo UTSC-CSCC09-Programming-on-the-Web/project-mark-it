@@ -313,6 +313,137 @@ function handleGenerativeFill(event) {
   })
 }
 
+function handleAIReimagine (event) {
+  event.preventDefault()
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'image.jpg')
+    formData.append('imageMime', 'image/jpeg')
+
+    fetch(`${backendUrl}/api/ai_fill/reimagine/`, {
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => {
+            alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+            throw new Error('AI Fill failed')
+          })
+        }
+        return res.blob()
+      })
+      .then((blob) => {
+        if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+          markboardRef.value.setImageOnMarkboard(blob)
+        }
+        toggleLoading() // Turn loading off
+      })
+      .catch((err) => {
+        if (err.message !== 'AI Fill failed') {
+          alert('AI Fill failed: ' + err.message)
+        }
+        toggleLoading() // Turn loading off
+      })
+  })
+}
+
+function handleGenerativeFillV2(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!maskModeOn) {
+    alert('Please enable mask mode to use generative fill.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    markboardRef.value.getMaskPngBlob().then((maskBlob) => {
+      if (!maskBlob) {
+        alert('Could not get mask from maskboard.')
+        toggleLoading()
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('prompt', aiPrompt.value)
+      formData.append('image', imageBlob, 'image.jpg')
+      formData.append('mask', maskBlob, 'mask.png')
+      formData.append('imageMime', 'image/jpeg')
+      formData.append('maskMime', 'image/png')
+
+      fetch(`${backendUrl}/api/ai_fill/generative-fill-v2/`, {
+        method: 'POST',
+        body: formData,
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+              throw new Error('AI Fill failed')
+            })
+          }
+          return res.json()
+        })
+        .then((data) => {
+          if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+            markboardRef.value.setImageOnMarkboard(data[0])
+          }
+          // Turn off mask mode after generation
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+        .catch((err) => {
+          if (err.message !== 'AI Fill failed') {
+            alert('AI Fill failed: ' + err.message)
+          }
+          // Also turn off mask mode on error
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+    })
+  })
+}
+
 function handleDownloadMarkboard() {
   if (markboardRef.value) {
     markboardRef.value.getJpegBlob().then((blob) => {
@@ -468,32 +599,32 @@ const markboardUploadError = ref('')
             </div>
           </div>
         </div>
-        <div class="generative-fill">
-          <h2>AI Generative Fill</h2>
-          <p>Powered by Clipdrop.co</p>
-          <span class="how-to-use-tooltip">
-            How to use
-            <span class="how-to-use-popup">
-              <strong>Instructions:</strong><br>
-              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
-              2. Enter a prompt describing what you want.<br>
-              3. Click <b>Generate</b>.<br>
-              4. Wait for the AI to fill the masked area.<br>
-            </span>
+      </div>
+      <div class="generative-fill">
+        <h2>AI Generative Fill</h2>
+        <p>Powered by Phot.ai</p>
+        <span class="how-to-use-tooltip">
+          How to use
+          <span class="how-to-use-popup">
+            <strong>Instructions:</strong><br>
+            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
+            2. Enter a prompt describing what you want.<br>
+            3. Click <b>Generate</b>.<br>
+            4. Wait for the AI to fill the masked area.<br>
           </span>
-          <div class="wrapper generative-fill-actions">
-            <button
-              class="mask-btn"
-              @click="handleToggleMaskMode"
-            >
-              {{ maskModeText }}
-            </button>
-            <div>
-              <form @submit.prevent="handleGenerativeFill" class="prompt-form">
-                <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-                <button type="submit">Generate</button>
-              </form>
-            </div>
+        </span>
+        <div class="wrapper generative-fill-actions">
+          <button
+            class="mask-btn"
+            @click="handleToggleMaskMode"
+          >
+            {{ maskModeText }}
+          </button>
+          <div>
+            <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
+              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+              <button type="submit">Generate</button>
+            </form>
           </div>
         </div>
       </main>
