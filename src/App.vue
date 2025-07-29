@@ -599,32 +599,32 @@ const markboardUploadError = ref('')
             </div>
           </div>
         </div>
-      </div>
-      <div class="generative-fill">
-        <h2>AI Generative Fill</h2>
-        <p>Powered by Phot.ai</p>
-        <span class="how-to-use-tooltip">
-          How to use
-          <span class="how-to-use-popup">
-            <strong>Instructions:</strong><br>
-            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
-            2. Enter a prompt describing what you want.<br>
-            3. Click <b>Generate</b>.<br>
-            4. Wait for the AI to fill the masked area.<br>
+        <div class="generative-fill">
+          <h2>AI Generative Fill</h2>
+          <p>Powered by Phot.ai</p>
+          <span class="how-to-use-tooltip">
+            How to use
+            <span class="how-to-use-popup">
+              <strong>Instructions:</strong><br>
+              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
+              2. Enter a prompt describing what you want.<br>
+              3. Click <b>Generate</b>.<br>
+              4. Wait for the AI to fill the masked area.<br>
+            </span>
           </span>
-        </span>
-        <div class="wrapper generative-fill-actions">
-          <button
-            class="mask-btn"
-            @click="handleToggleMaskMode"
-          >
-            {{ maskModeText }}
-          </button>
-          <div>
-            <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
-              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-              <button type="submit">Generate</button>
-            </form>
+          <div class="wrapper generative-fill-actions">
+            <button
+              class="mask-btn"
+              @click="handleToggleMaskMode"
+            >
+              {{ maskModeText }}
+            </button>
+            <div>
+              <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
+                <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+                <button type="submit">Generate</button>
+              </form>
+            </div>
           </div>
         </div>
       </main>
