@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 
 const emit = defineEmits(['unsubscribe'])
 
+const backendUrl = 'http://localhost:3001'
+
 const API_BASE_URL = 'http://localhost:3001'
 const user = ref({ googleId: null, displayName: null })
 const userLoading = ref(true)

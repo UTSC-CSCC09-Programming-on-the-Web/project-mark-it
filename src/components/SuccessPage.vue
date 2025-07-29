@@ -15,6 +15,7 @@
 </template>
 
 <script>
+const backendUrl = 'http://localhost:3001'
 
 export default {
   data() {
@@ -26,8 +27,14 @@ export default {
     this.sessionId = new URLSearchParams(window.location.search).get('session_id')
   },
   methods: {
-    goHome() {
-      window.location.href = '/'
+    async createPortalSession() {
+      const response = await fetch(`${backendUrl}/api/payment/create-portal-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: this.sessionId })
+      })
+      const data = await response.json()
+      window.location.href = data.url
     }
   }
 }

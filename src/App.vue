@@ -23,6 +23,21 @@ function getCurrentRoute() {
   if (path === '/cancel') return 'cancel'
   return 'home'
 }
+const backendUrl = 'http://localhost:3001' //replace after deployment
+
+// For testing only (remove later)
+// This function fetches the current user's data from the server
+// and logs it to the console.
+function testMe() {
+  fetch(`${backendUrl}/api/users/me`, {
+    credentials: 'include',
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      console.log(data)
+      alert('Your googleId: ' + data.googleId)
+    })
+}
 
 // Check if user logged in and is subscribed
 async function checkAuthStatus() {
@@ -313,6 +328,137 @@ function handleGenerativeFill(event) {
   })
 }
 
+function handleAIReimagine (event) {
+  event.preventDefault()
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'image.jpg')
+    formData.append('imageMime', 'image/jpeg')
+
+    fetch(`${backendUrl}/api/ai_fill/reimagine/`, {
+      method: 'POST',
+      body: formData,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => {
+            alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+            throw new Error('AI Fill failed')
+          })
+        }
+        return res.blob()
+      })
+      .then((blob) => {
+        if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+          markboardRef.value.setImageOnMarkboard(blob)
+        }
+        toggleLoading() // Turn loading off
+      })
+      .catch((err) => {
+        if (err.message !== 'AI Fill failed') {
+          alert('AI Fill failed: ' + err.message)
+        }
+        toggleLoading() // Turn loading off
+      })
+  })
+}
+
+function handleGenerativeFillV2(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!maskModeOn) {
+    alert('Please enable mask mode to use generative fill.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  markboardRef.value.getJpegBlob().then((imageBlob) => {
+    if (!imageBlob) {
+      alert('Could not get image from markboard.')
+      toggleLoading()
+      return
+    }
+    markboardRef.value.getMaskPngBlob().then((maskBlob) => {
+      if (!maskBlob) {
+        alert('Could not get mask from maskboard.')
+        toggleLoading()
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('prompt', aiPrompt.value)
+      formData.append('image', imageBlob, 'image.jpg')
+      formData.append('mask', maskBlob, 'mask.png')
+      formData.append('imageMime', 'image/jpeg')
+      formData.append('maskMime', 'image/png')
+
+      fetch(`${backendUrl}/api/ai_fill/generative-fill-v2/`, {
+        method: 'POST',
+        body: formData,
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((err) => {
+              alert('AI Fill failed: ' + (err.error || 'Unknown error'))
+              throw new Error('AI Fill failed')
+            })
+          }
+          return res.json()
+        })
+        .then((data) => {
+          if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+            markboardRef.value.setImageOnMarkboard(data[0])
+          }
+          // Turn off mask mode after generation
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+        .catch((err) => {
+          if (err.message !== 'AI Fill failed') {
+            alert('AI Fill failed: ' + err.message)
+          }
+          // Also turn off mask mode on error
+          if (
+            markboardRef.value &&
+            typeof markboardRef.value.toggleMaskMode === 'function' &&
+            markboardRef.value.maskMode
+          ) {
+            maskModeOn = markboardRef.value.toggleMaskMode()
+            maskModeText.value = maskModeOn ? 'Exit Mask Mode' : 'Mask Mode'
+          }
+          toggleLoading() // Turn loading off
+        })
+    })
+  })
+}
+
 function handleDownloadMarkboard() {
   if (markboardRef.value) {
     markboardRef.value.getJpegBlob().then((blob) => {
@@ -470,7 +616,7 @@ const markboardUploadError = ref('')
         </div>
         <div class="generative-fill">
           <h2>AI Generative Fill</h2>
-          <p>Powered by Clipdrop.co</p>
+          <p>Powered by Phot.ai</p>
           <span class="how-to-use-tooltip">
             How to use
             <span class="how-to-use-popup">
@@ -489,7 +635,7 @@ const markboardUploadError = ref('')
               {{ maskModeText }}
             </button>
             <div>
-              <form @submit.prevent="handleGenerativeFill" class="prompt-form">
+              <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
                 <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
                 <button type="submit">Generate</button>
               </form>
