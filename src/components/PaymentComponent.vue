@@ -50,6 +50,8 @@ export default {
 </script>
 
 <style scoped>
+/* GitHub Copilot Prompt: "Edit UI to match with home page styling" */
+
 .payment-component {
   text-align: center;
   margin: 1rem 0;

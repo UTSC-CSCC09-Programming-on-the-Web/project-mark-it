@@ -39,6 +39,8 @@ export default {
 </script>
 
 <style scoped>
+/* GitHub Copilot Prompt: "Edit UI to match with home page styling" */
+
 .cancel-container {
   display: flex;
   flex-direction: column;
