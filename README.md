@@ -1,6 +1,7 @@
 # **Project Mark-it**
 
 Deployed URL: https://joezhou.me
+NOTE: If you are unable to connect, try using a VPN.
 
 ## **Team Members**
 
