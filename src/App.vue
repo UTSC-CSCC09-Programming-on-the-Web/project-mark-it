@@ -722,6 +722,8 @@ const markboardUploadError = ref('')
 </template>
 
 <style scoped>
+/* GitHub Copilot Prompt: "Edit Stripe and login UI to match with home page styling" */
+
 .loading-container,
 .login-container,
 .paywall-container {
