@@ -7,9 +7,9 @@ import multer from 'multer';
 import path from 'path'
 import fs from 'fs'
 import { requireSubscription } from '../middleware/auth.js';
+import axios from 'axios';
 
-const axios = require('axios');
-const backendUrl = "https://localhost:3001"; // replace later after deployment
+const backendUrl = process.env.BACKEND_URL || "http://localhost:3001";
 
 export const aiFillRouter = Router();
 const upload = multer({
@@ -235,7 +235,7 @@ aiFillRouter.post('/generative-fill-v2', requireSubscription, upload.fields([
     });
 });
 
-filesRouter.post('/tempfile/', upload.single('file'), async (req, res) => {
+aiFillRouter.post('/tempfile/', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' })
   }
@@ -264,7 +264,7 @@ aiFillRouter.get('/tempfile/:id', async (req, res) => {
   res.sendFile(filePath)
 })
 
-filesRouter.delete('/tempfile/:id', async (req, res) => {
+aiFillRouter.delete('/tempfile/:id', async (req, res) => {
   const file = await TempFile.findByPk(req.params.id)
   if (!file) {
     return res.status(404).json({ error: 'File not found' })

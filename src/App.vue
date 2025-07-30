@@ -6,8 +6,7 @@ import PaymentComponent from './components/PaymentComponent.vue'
 import SuccessPage from './components/SuccessPage.vue'
 import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
-
-const API_BASE_URL = 'http://localhost:3001'
+import { API_BASE_URL } from '../config.js'
 
 // Stripe paywall and auth states
 const user = ref(null)
@@ -266,7 +265,7 @@ function handleGenerativeFill(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill/`, {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill`, {
         method: 'POST',
         body: formData,
       })
@@ -332,7 +331,7 @@ function handleAIReimagine (event) {
     formData.append('image', imageBlob, 'image.jpg')
     formData.append('imageMime', 'image/jpeg')
 
-    fetch(`${backendUrl}/api/ai_fill/reimagine/`, {
+    fetch(`${API_BASE_URL}/api/ai_fill/reimagine`, {
       method: 'POST',
       body: formData,
     })
@@ -397,9 +396,10 @@ function handleGenerativeFillV2(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch(`${backendUrl}/api/ai_fill/generative-fill-v2/`, {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill-v2`, {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       })
         .then((res) => {
           if (!res.ok) {
@@ -411,8 +411,22 @@ function handleGenerativeFillV2(event) {
           return res.json()
         })
         .then((data) => {
+          console.log('PhotAI response data:', data);
+
+          // Handle the new response format from PhotAI Object Replacer API
+          let imageUrl;
+          if (data.output_urls && data.output_urls.length > 0) {
+            // Use the first output image from the array
+            imageUrl = data.output_urls[0];
+          } else if (data.imageUrl) {
+            // Fallback for old format
+            imageUrl = data.imageUrl;
+          } else {
+            throw new Error('No output images received from PhotAI API');
+          }
+
           if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
-            markboardRef.value.setImageOnMarkboard(data[0])
+            markboardRef.value.setImageOnMarkboard(imageUrl)
           }
           // Turn off mask mode after generation
           if (
@@ -599,7 +613,7 @@ const markboardUploadError = ref('')
             </div>
           </div>
         </div>
-      </div>
+      </main>
       <div class="generative-fill">
         <h2>AI Generative Fill</h2>
         <p>Powered by Phot.ai</p>
@@ -627,7 +641,7 @@ const markboardUploadError = ref('')
             </form>
           </div>
         </div>
-      </main>
+      </div>
       <br />
       <br />
       <br />
