@@ -12,4 +12,11 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  define: {
+    __VUE_PROD_DEVTOOLS__: false,
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5173
+  }
 })

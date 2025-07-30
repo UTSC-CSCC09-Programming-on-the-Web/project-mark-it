@@ -18,7 +18,7 @@
 </template>
 
 <script>
-const API_BASE_URL = 'http://localhost:3001'
+import { API_BASE_URL } from '../../config.js'
 
 export default {
   methods: {

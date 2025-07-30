@@ -6,8 +6,8 @@ import PaymentComponent from './components/PaymentComponent.vue'
 import SuccessPage from './components/SuccessPage.vue'
 import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
-
-const API_BASE_URL = 'http://localhost:3001'
+import { joinRoom, requestMarkboard } from './js/socket.js'
+import { API_BASE_URL } from '../config.js'
 
 // Stripe paywall and auth states
 const user = ref(null)
@@ -15,6 +15,8 @@ const isLoading = ref(true)
 const showPaywall = ref(false)
 const showLoginPage = ref(false)
 const currentRoute = ref('')
+const roomName = ref('')
+const roomInput = ref('')
 
 // Stripe paywall routes
 function getCurrentRoute() {
@@ -266,7 +268,7 @@ function handleGenerativeFill(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill/`, {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill`, {
         method: 'POST',
         body: formData,
       })
@@ -332,7 +334,7 @@ function handleAIReimagine (event) {
     formData.append('image', imageBlob, 'image.jpg')
     formData.append('imageMime', 'image/jpeg')
 
-    fetch(`${backendUrl}/api/ai_fill/reimagine/`, {
+    fetch(`${API_BASE_URL}/api/ai_fill/reimagine`, {
       method: 'POST',
       body: formData,
     })
@@ -440,9 +442,10 @@ function handleGenerativeFillV2(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch(`${backendUrl}/api/ai_fill/generative-fill-v2/`, {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill-v2`, {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       })
         .then((res) => {
           if (!res.ok) {
@@ -454,8 +457,22 @@ function handleGenerativeFillV2(event) {
           return res.json()
         })
         .then((data) => {
+          console.log('PhotAI response data:', data);
+
+          // Handle the new response format from PhotAI Object Replacer API
+          let imageUrl;
+          if (data.output_urls && data.output_urls.length > 0) {
+            // Use the first output image from the array
+            imageUrl = data.output_urls[0];
+          } else if (data.imageUrl) {
+            // Fallback for old format
+            imageUrl = data.imageUrl;
+          } else {
+            throw new Error('No output images received from PhotAI API');
+          }
+
           if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
-            markboardRef.value.setImageOnMarkboard(data[0])
+            markboardRef.value.setImageOnMarkboard(imageUrl)
           }
           // Turn off mask mode after generation
           if (
@@ -561,9 +578,12 @@ function handleColorChange(newColor) {
   color.value = newColor
 }
 
-function handleRoomJoin(roomName) {
-  console.log('Joining room:', roomName)
-
+function handleRoomJoin() {
+  roomName.value = roomInput.value.trim()
+  console.log('Joining room:', roomName.value)
+  joinRoom(roomName.value)
+  requestMarkboard()
+  roomInput.value = ''
 }
 
 function handleClearMarkboard() {
@@ -615,6 +635,20 @@ const markboardUploadError = ref('')
     <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
     <div class="main">
       <main>
+        <div class="room-join">
+          <h1>Current Room Code: {{ roomName }}</h1>
+          <p>Join a collaborative room:</p>
+          <form @submit.prevent="handleRoomJoin(roomInput)">
+            <input
+              type="text"
+              v-model="roomInput"
+              placeholder="Enter room name"
+              required
+              class="room-input"
+            />
+            <button type="submit" class="room-join-btn">Join/Create Room</button>
+          </form>
+        </div>
         <div class="markboard-title">
           <h1>Markboard</h1>
           <p>Click and drag to draw</p>
@@ -1080,5 +1114,65 @@ footer {
 
 .footer-content ul li a:hover {
   text-decoration: underline;
+}
+
+.room-join {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 32px 24px 24px 24px;
+  margin: 32px auto 24px auto;
+  max-width: 1024px;
+  width: 1024px;
+  border: none;
+}
+
+.room-join h1 {
+  color: #1976d2;
+  margin-bottom: 8px;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.room-join p {
+  color: #64748b;
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+
+.room-join form {
+  display: flex;
+  gap: 12px;
+}
+
+.room-input {
+  font-size: 1rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1.5px solid #bdbdbd;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 180px;
+  max-width: 240px;
+}
+
+.room-input:focus {
+  border-color: #1976d2;
+}
+
+.room-join-btn {
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.room-join-btn:hover {
+  background: #fff;
+  color: #1976d2;
 }
 </style>

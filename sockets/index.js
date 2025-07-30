@@ -6,9 +6,12 @@ import { Server } from 'socket.io';
 
 const app = express();
 const server = createServer(app);
+
+const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN || 'http://localhost:5173';
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: FRONTEND_DOMAIN,
     methods: ["GET", "POST"]
   }
 });
@@ -18,18 +21,25 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('user disconnected');
   });
-  socket.on('paint', (msg) => {
-    console.log('paint: ' + msg);
-    socket.broadcast.emit('paint', msg);
+  socket.on('paint', ({ room, paint }) => {
+    console.log(`paint in room ${room}:`, paint)
+    socket.to(room).emit('paint', paint)
+  })
+  socket.on('markboard', ({ room, markboard }) => {
+    console.log(`markboard in room ${room}:`, markboard)
+    socket.to(room).emit('markboard', markboard)
+  })
+  socket.on('markboardReq', ({ room }) => {
+    console.log(`markboard requested in room ${room}`)
+    socket.to(room).emit('markboardReq', true)
+  })
+  socket.on('joinRoom', (room) => {
+    console.log(`User joined room: ${room}`);
+    socket.join(room);
   });
-  socket.on('markboard', (msg) => {
-    console.log('markboard: ' + msg);
-    socket.broadcast.emit('markboard', msg);
-  });
-  socket.on('markboardReq', () => {
-    console.log('markboard requested');
-    // Ask other clients to send their markboards
-    socket.broadcast.emit('markboardReq', true);
+  socket.on('leaveRoom', (room) => {
+    console.log(`User left room: ${room}`);
+    socket.leave(room);
   });
 });
 

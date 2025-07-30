@@ -9,7 +9,7 @@ import fs from 'fs'
 import { requireSubscription } from '../middleware/auth.js';
 import axios from 'axios';
 
-const backendUrl = "https://localhost:3001"; // replace later after deployment
+const backendUrl = process.env.BACKEND_URL || "http://localhost:3001";
 
 export const aiFillRouter = Router();
 const upload = multer({
