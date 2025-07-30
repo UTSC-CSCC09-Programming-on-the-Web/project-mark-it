@@ -1,6 +1,5 @@
-// Base code obtained from:
-// https://docs.stripe.com/billing/quickstart?lang=node
-// as mentioned in the project description
+// Base code obtained from: // https://docs.stripe.com/billing/quickstart?lang=node // as mentioned
+in the project description
 
 <template>
   <div class="cancel-container">
@@ -33,8 +32,8 @@ export default {
     },
     tryAgain() {
       window.location.href = '/?showPaywall=true'
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -102,7 +101,9 @@ button {
   border-radius: 6px;
   border: 1px solid;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   font-weight: 500;
 }
 
@@ -128,5 +129,3 @@ button {
   color: #64748b;
 }
 </style>
-
-

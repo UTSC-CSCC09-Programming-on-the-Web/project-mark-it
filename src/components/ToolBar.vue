@@ -2,27 +2,59 @@
   <div class="toolbar">
     <div class="toolbar-colours">
       <div class="color-picker-wrapper">
-        <input type="color" id="colour" v-model="colour" @change="watch" class="color-picker" />
+        <input
+          type="color"
+          id="colour"
+          v-model="colour"
+          @change="watch"
+          class="color-picker"
+          :style="{ backgroundColor: colour }"
+        />
       </div>
       <div class="color-divider"></div>
       <div class="preset-colours">
         <button
-          v-for="c in preSetColours"
+          v-for="(c, index) in preSetColours"
           :key="c"
           :style="{ backgroundColor: c }"
-          @click="changeColor(c)"
+          @click="changeColor(c, index)"
         ></button>
       </div>
     </div>
-    <!-- Room Info -->
+    <div class="toolbar-width">
+      <label for="width">Width:</label>
+      <input
+        type="range"
+        id="width"
+        v-model="width"
+        min="1"
+        max="20"
+        step="1"
+        class="width-slider"
+        @input="updateWidth(width)"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, defineProps } from 'vue'
 
-const preSetColours = ref(['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#7F00FF', '#FFFFFF', '#000000'])
-const colour = ref('#000000')
+const preSetColours = ref([
+  '#FF0000',
+  '#FF7F00',
+  '#FFFF00',
+  '#00FF00',
+  '#0000FF',
+  '#7F00FF',
+  '#FFFFFF',
+  '#000000',
+])
+const preSetIndex = ref(0)
+const colour = ref(preSetColours.value[preSetIndex.value])
+const widths = ref(Array(preSetColours.value.length).fill(4))
+const width = ref(widths.value[0])
+
 const props = defineProps({
   color: {
     type: String,
@@ -30,15 +62,22 @@ const props = defineProps({
   },
 })
 
-const room = ref('')
-
-const emit = defineEmits(['colorChange'])
-const changeColor = (newColor) => {
+const emit = defineEmits(['colorChange', 'widthChange'])
+const changeColor = (newColor, index) => {
   colour.value = newColor
   emit('colorChange', newColor)
+  preSetIndex.value = index
+  width.value = widths.value[index]
+  emit('widthChange', width.value)
 }
 const watch = () => {
   emit('colorChange', colour.value)
+  preSetColours.value[preSetIndex.value] = colour.value
+}
+
+const updateWidth = (newWidth) => {
+  widths.value[preSetIndex.value] = newWidth
+  emit('widthChange', newWidth)
 }
 </script>
 
@@ -74,20 +113,24 @@ button {
   border-radius: 30%;
   margin: 0;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s;
   outline: none;
   display: inline-block;
   position: relative;
 }
 
-button[style*="#FFFFFF"] {
+button[style*='#FFFFFF'] {
   border: 2px solid #888; /* Make white button visible */
 }
 
-button:hover, button:focus {
+button:hover,
+button:focus {
   transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   border-color: #333;
 }
 
@@ -95,6 +138,19 @@ button:hover, button:focus {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.width-slider {
+  width: 200px;
+  margin: 0 0 0 10px;
+}
+
+.toolbar-width {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
 }
 
 .room-info {

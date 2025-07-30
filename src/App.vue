@@ -37,21 +37,23 @@ async function checkAuthStatus() {
       user.value = userData
       if (currentRoute.value === 'success' || currentRoute.value === 'cancel') return
 
-      const subscriptionRes = await fetch(`${API_BASE_URL}/api/payment/subscription-status`, { credentials: 'include' })
+      const subscriptionRes = await fetch(`${API_BASE_URL}/api/payment/subscription-status`, {
+        credentials: 'include',
+      })
       const subscriptionData = await subscriptionRes.json()
 
       if (subscriptionRes.ok && subscriptionData.isSubscribed) {
         user.value.isSubscribed = subscriptionData.isSubscribed
         await fetchUserFiles()
-      }
-      else showPaywall.value = true
-    }
-    else {
-      if (currentRoute.value !== 'success' && currentRoute.value !== 'cancel') showLoginPage.value = true
+      } else showPaywall.value = true
+    } else {
+      if (currentRoute.value !== 'success' && currentRoute.value !== 'cancel')
+        showLoginPage.value = true
     }
   } catch (error) {
     console.error('Error checking auth status:', error)
-    if (currentRoute.value !== 'success' && currentRoute.value !== 'cancel') showLoginPage.value = true
+    if (currentRoute.value !== 'success' && currentRoute.value !== 'cancel')
+      showLoginPage.value = true
   } finally {
     isLoading.value = false
   }
@@ -82,23 +84,26 @@ function handleSubscriptionCancel() {
 }
 
 async function handleUnsubscribe() {
-  if (!confirm('Are you sure you want to unsubscribe? You will lose access to all premium features.')) return
+  if (
+    !confirm('Are you sure you want to unsubscribe? You will lose access to all premium features.')
+  )
+    return
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/payment/cancel-subscription`, {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
     })
     const data = await res.json()
     if (res.ok) {
-      alert('Successfully unsubscribed. You can resubscribe anytime to regain access to premium features.')
+      alert(
+        'Successfully unsubscribed. You can resubscribe anytime to regain access to premium features.',
+      )
       // Redirect to subscription page
       showPaywall.value = true
       // Update user subscription status locally
       if (user.value) user.value.isSubscribed = false
-    }
-    else alert('Failed to unsubscribe: ' + (data.error || 'Unknown error'))
-
+    } else alert('Failed to unsubscribe: ' + (data.error || 'Unknown error'))
   } catch (error) {
     console.error('Error unsubscribing:', error)
     alert('Failed to unsubscribe: ' + error.message)
@@ -316,7 +321,7 @@ function handleGenerativeFill(event) {
   })
 }
 
-function handleAIReimagine (event) {
+function handleAIReimagine(event) {
   event.preventDefault()
   if (!markboardRef.value) {
     alert('Markboard not ready.')
@@ -514,11 +519,17 @@ function toggleLoading() {
   loading.value = !loading.value
 }
 
-const color = ref('#000000')
+const color = ref('#FF0000')
+const width = ref(4)
 
 function handleColorChange(newColor) {
   console.log('Color changed to:', newColor)
   color.value = newColor
+}
+
+function handleWidthChange(newWidth) {
+  console.log('Width changed to:', newWidth)
+  width.value = newWidth
 }
 
 function handleRoomJoin() {
@@ -557,9 +568,7 @@ const markboardUploadError = ref('')
     <div class="login-content">
       <h1>Welcome to Mark-It</h1>
       <p>Please sign in to access the application</p>
-      <button @click="handleGoogleLogin" class="google-login-btn">
-        Sign in with Google
-      </button>
+      <button @click="handleGoogleLogin" class="google-login-btn">Sign in with Google</button>
     </div>
   </div>
 
@@ -574,7 +583,7 @@ const markboardUploadError = ref('')
   </div>
 
   <!-- Main application for authenticated and subscribed users -->
-  <div v-else>
+  <div>
     <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
     <div class="main">
       <main>
@@ -596,12 +605,16 @@ const markboardUploadError = ref('')
           <h1>Markboard</h1>
           <p>Click and drag to draw</p>
         </div>
-        <Markboard ref="markboardRef" :color="color" />
+        <Markboard ref="markboardRef" :color="color" :width="width" />
         <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
         <div v-if="loading" class="loading-title">Loading...</div>
         <div class="markboard-controls">
           <div class="wrapper">
-            <ToolBar @color-change="handleColorChange" @join-room="handleRoomJoin"/>
+            <ToolBar
+              @color-change="handleColorChange"
+              @join-room="handleRoomJoin"
+              @width-change="handleWidthChange"
+            />
             <div class="markboard-actions">
               <form @submit="handleUploadToMarkboard" class="upload-form">
                 <label class="file-label">
@@ -611,7 +624,9 @@ const markboardUploadError = ref('')
                 <span class="file-name">{{ chosenFileName }}</span>
                 <button type="submit">Upload to Markboard</button>
               </form>
-              <span v-if="markboardUploadError" class="input-error">{{ markboardUploadError }}</span>
+              <span v-if="markboardUploadError" class="input-error">{{
+                markboardUploadError
+              }}</span>
               <div class="markboard-actions-bottom">
                 <button @click="handleDownloadMarkboard">Download Markboard</button>
                 <button @click="handleClearMarkboard">Clear Markboard</button>
@@ -625,18 +640,15 @@ const markboardUploadError = ref('')
           <span class="how-to-use-tooltip">
             How to use
             <span class="how-to-use-popup">
-              <strong>Instructions:</strong><br>
-              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
-              2. Enter a prompt describing what you want.<br>
-              3. Click <b>Generate</b>.<br>
-              4. Wait for the AI to fill the masked area.<br>
+              <strong>Instructions:</strong><br />
+              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br />
+              2. Enter a prompt describing what you want.<br />
+              3. Click <b>Generate</b>.<br />
+              4. Wait for the AI to fill the masked area.<br />
             </span>
           </span>
           <div class="wrapper generative-fill-actions">
-            <button
-              class="mask-btn"
-              @click="handleToggleMaskMode"
-            >
+            <button class="mask-btn" @click="handleToggleMaskMode">
               {{ maskModeText }}
             </button>
             <div>
@@ -659,17 +671,11 @@ const markboardUploadError = ref('')
           <li>
             The Stripe structure and code in payment_router.js, PaymentComponent.vue,
             SuccessPage.vue, and CancelPage.vue obtained from:
-            <a href="https://docs.stripe.com/billing/quickstart?lang=node"
-              >Stripe Checkout</a
-            >
+            <a href="https://docs.stripe.com/billing/quickstart?lang=node">Stripe Checkout</a>
             and
-            <a href="https://docs.stripe.com/error-handling"
-              >Stripe Error Handling Documentation</a
-            >
+            <a href="https://docs.stripe.com/error-handling">Stripe Error Handling Documentation</a>
           </li>
-          <li>
-            GitHub Copilot inline code suggestions were used to help complete the code.
-          </li>
+          <li>GitHub Copilot inline code suggestions were used to help complete the code.</li>
         </ul>
       </div>
     </footer>
@@ -725,7 +731,9 @@ const markboardUploadError = ref('')
   border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   margin: 0.5rem;
 }
 
@@ -780,7 +788,7 @@ header {
   display: flex;
   margin-top: 16px;
   margin-bottom: 16px;
-  max-width: 1024px;   /* Match markboard width */
+  max-width: 1024px; /* Match markboard width */
   width: 100%;
   margin-left: auto;
   margin-right: auto;
@@ -821,7 +829,9 @@ header {
   background: #1976d2;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .markboard-actions button:hover,
@@ -841,7 +851,9 @@ header {
   border-radius: 6px;
   font-size: 1rem;
   border: 1px solid #1976d2;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .file-label:hover {
@@ -849,7 +861,7 @@ header {
   color: #1976d2;
 }
 
-.file-label input[type="file"] {
+.file-label input[type='file'] {
   position: absolute;
   left: 0;
   top: 0;
@@ -889,7 +901,7 @@ header {
 .toolbar-colours {
   display: flex;
   align-items: center; /* Vertically center children */
-  gap: 12px;           /* Optional: space between items */
+  gap: 12px; /* Optional: space between items */
 }
 
 .input-error {
@@ -904,7 +916,7 @@ header {
 .generative-fill {
   background: #f8fafc;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   padding: 32px 24px 24px 24px;
   margin: 32px auto 24px auto;
   max-width: 1024px;
@@ -926,7 +938,7 @@ header {
   background: #fff;
   border-radius: 8px;
   padding: 18px 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   margin-top: 18px;
   width: 100%;
   box-sizing: border-box;
@@ -941,7 +953,9 @@ header {
   background: #1976d2;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .generative-fill-actions .mask-btn:hover {
@@ -949,7 +963,7 @@ header {
   color: #1976d2;
 }
 
-.generative-fill-actions input[type="text"] {
+.generative-fill-actions input[type='text'] {
   font-size: 1rem;
   padding: 7px 12px;
   border-radius: 6px;
@@ -963,11 +977,11 @@ header {
   flex: 1 1 auto;
 }
 
-.generative-fill-actions input[type="text"]:focus {
+.generative-fill-actions input[type='text']:focus {
   border-color: #1976d2;
 }
 
-.generative-fill-actions button[type="submit"] {
+.generative-fill-actions button[type='submit'] {
   font-size: 1rem;
   padding: 8px 18px;
   border-radius: 6px;
@@ -975,11 +989,13 @@ header {
   background: #1976d2;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   margin-left: 8px;
 }
 
-.generative-fill-actions button[type="submit"]:hover {
+.generative-fill-actions button[type='submit']:hover {
   background: #fff;
   color: #1976d2;
 }
@@ -1009,11 +1025,11 @@ header {
   color: #222;
   border: 1.5px solid #1976d2;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   padding: 16px 20px;
-  min-width: 600px;   /* Increased from 260px */
-  max-width: 800px;   /* Optional: prevents it from getting too wide */
-  width: 100%;        /* Ensures it fills up to max-width */
+  min-width: 600px; /* Increased from 260px */
+  max-width: 800px; /* Optional: prevents it from getting too wide */
+  width: 100%; /* Ensures it fills up to max-width */
   z-index: 10;
   font-size: 0.8rem;
   line-height: 1.5;
@@ -1069,7 +1085,7 @@ footer {
 .room-join {
   background: #f8fafc;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   padding: 32px 24px 24px 24px;
   margin: 32px auto 24px auto;
   max-width: 1024px;
@@ -1118,7 +1134,9 @@ footer {
   background: #1976d2;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .room-join-btn:hover {

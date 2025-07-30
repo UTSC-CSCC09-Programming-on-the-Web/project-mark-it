@@ -1,6 +1,5 @@
-// Base code obtained from:
-// https://docs.stripe.com/billing/quickstart?lang=node
-// as mentioned in the project description
+// Base code obtained from: // https://docs.stripe.com/billing/quickstart?lang=node // as mentioned
+in the project description
 
 <template>
   <div class="payment-component">
@@ -13,11 +12,13 @@
           <span class="period">month</span>
         </div>
       </div>
-      <p class="description">Subscribe monthly to unlock Mark-it — a collaborative drawing platform where you and your friends can produce masterpieces together in real-time on a shared canvas using powerful AI tools to boost your creativity and enhance your art.</p>
+      <p class="description">
+        Subscribe monthly to unlock Mark-it — a collaborative drawing platform where you and your
+        friends can produce masterpieces together in real-time on a shared canvas using powerful AI
+        tools to boost your creativity and enhance your art.
+      </p>
     </div>
-    <button @click="createCheckoutSession" class="subscribe-btn">
-      Subscribe Now
-    </button>
+    <button @click="createCheckoutSession" class="subscribe-btn">Subscribe Now</button>
   </div>
 </template>
 
@@ -33,7 +34,7 @@ export default {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ lookup_key: 'markit_monthly_subscription' })
+          body: JSON.stringify({ lookup_key: 'markit_monthly_subscription' }),
         })
         if (!response.ok) throw new Error('Error creating checkout session')
         const data = await response.json()
@@ -44,8 +45,8 @@ export default {
         console.error('Error creating checkout session:', error)
         this.$emit('cancel')
       }
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -118,7 +119,9 @@ export default {
   background: #1976d2;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   font-weight: 500;
 }
 

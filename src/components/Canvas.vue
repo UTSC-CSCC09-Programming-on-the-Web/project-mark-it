@@ -27,11 +27,13 @@ const drawing = ref(false)
 const props = defineProps({
   color: {
     type: String,
-    default: '#000000',
+    default: '#FF0000',
+  },
+  width: {
+    type: Number,
+    default: 4,
   },
 })
-
-const width = ref(4)
 
 onMounted(() => {
   const canvasElement = markboard.value
@@ -59,6 +61,10 @@ const startDrawing = (e) => {
   if (!context) return
 
   drawing.value = true
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+  context.shadowBlur = 1
+  context.shadowColor = props.color
 
   context.beginPath()
   context.moveTo(e.offsetX, e.offsetY)
@@ -69,7 +75,7 @@ const startDrawing = (e) => {
       x: e.offsetX,
       y: e.offsetY,
       colour: props.color,
-      width: width.value,
+      width: props.width,
     },
     userId: state.userId,
   })
@@ -79,9 +85,16 @@ const paint = (e) => {
   if (!drawing.value || !context) return
 
   context.strokeStyle = props.color
-  context.lineWidth = width.value
+  context.lineWidth = props.width
 
-  context.lineTo(e.offsetX, e.offsetY)
+  context.bezierCurveTo(
+    e.offsetX - 1,
+    e.offsetY - 1,
+    e.offsetX + 1,
+    e.offsetY + 1,
+    e.offsetX,
+    e.offsetY,
+  )
   context.stroke()
 
   sendPaint({
@@ -90,7 +103,7 @@ const paint = (e) => {
       x: e.offsetX,
       y: e.offsetY,
       colour: props.color,
-      width: width.value,
+      width: props.width,
     },
     userId: state.userId,
   })
@@ -108,7 +121,7 @@ const stopDrawing = () => {
       x: null,
       y: null,
       colour: props.color,
-      width: width.value,
+      width: props.width,
     },
     userId: state.userId,
   })
@@ -120,6 +133,10 @@ socket.on('paint', (paint) => {
   if (paint.status === PAINT_STATUS[0]) {
     connectedContext.beginPath()
     connectedContext.moveTo(paint.data.x, paint.data.y)
+    connectedContext.lineCap = 'round'
+    connectedContext.lineJoin = 'round'
+    connectedContext.shadowBlur = 1
+    connectedContext.shadowColor = paint.data.colour
   } else if (paint.status === PAINT_STATUS[2]) {
     connectedContext.closePath()
     return
@@ -265,7 +282,7 @@ socket.on('markboard', (markboard) => {
 
 function clearMarkboard() {
   const canvasElement = markboard.value
-  if (!canvasElement||!context) return
+  if (!canvasElement || !context) return
   context.clearRect(0, 0, canvaswidth, canvasheight)
   context.fillStyle = '#fff'
   context.fillRect(0, 0, canvaswidth, canvasheight)
@@ -275,7 +292,14 @@ function clearMarkboard() {
   })
 }
 
-defineExpose({ getJpegBlob, getMaskPngBlob, maskMode, toggleMaskMode, setImageOnMarkboard, clearMarkboard })
+defineExpose({
+  getJpegBlob,
+  getMaskPngBlob,
+  maskMode,
+  toggleMaskMode,
+  setImageOnMarkboard,
+  clearMarkboard,
+})
 </script>
 
 <template>

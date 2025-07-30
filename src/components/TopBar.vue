@@ -72,7 +72,7 @@ onMounted(fetchUser)
   color: #fff;
   border-bottom: 2px solid #000000;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
 }
@@ -102,7 +102,9 @@ onMounted(fetchUser)
   background: #1976d2;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .top-bar-actions button:hover {
   background: #fff;

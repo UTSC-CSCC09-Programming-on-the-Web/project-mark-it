@@ -1,25 +1,21 @@
-// Base code obtained from:
-// https://docs.stripe.com/billing/quickstart?lang=node
-// as mentioned in the project description
+// Base code obtained from: // https://docs.stripe.com/billing/quickstart?lang=node // as mentioned
+in the project description
 
 <template>
   <div class="success-container">
     <div class="success-content">
       <h1>Welcome to Mark-It!</h1>
       <p>Your subscription is now active. You can now access all premium features.</p>
-      <button @click="goHome" class="get-started-btn">
-        Get Started
-      </button>
+      <button @click="goHome" class="get-started-btn">Get Started</button>
     </div>
   </div>
 </template>
 
 <script>
-
 export default {
   data() {
     return {
-      sessionId: null
+      sessionId: null,
     }
   },
   mounted() {
@@ -28,8 +24,8 @@ export default {
   methods: {
     goHome() {
       window.location.href = '/'
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -75,7 +71,9 @@ export default {
   border-radius: 6px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   margin: 0.5rem;
 }
 
