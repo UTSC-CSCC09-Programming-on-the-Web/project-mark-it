@@ -6,6 +6,7 @@ import PaymentComponent from './components/PaymentComponent.vue'
 import SuccessPage from './components/SuccessPage.vue'
 import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
+import { joinRoom, requestMarkboard } from './js/socket.js'
 
 const API_BASE_URL = 'http://localhost:3001'
 
@@ -15,6 +16,8 @@ const isLoading = ref(true)
 const showPaywall = ref(false)
 const showLoginPage = ref(false)
 const currentRoute = ref('')
+const roomName = ref('')
+const roomInput = ref('')
 
 // Stripe paywall routes
 function getCurrentRoute() {
@@ -518,9 +521,12 @@ function handleColorChange(newColor) {
   color.value = newColor
 }
 
-function handleRoomJoin(roomName) {
-  console.log('Joining room:', roomName)
-
+function handleRoomJoin() {
+  roomName.value = roomInput.value.trim()
+  console.log('Joining room:', roomName.value)
+  joinRoom(roomName.value)
+  requestMarkboard()
+  roomInput.value = ''
 }
 
 function handleClearMarkboard() {
@@ -547,7 +553,7 @@ const markboardUploadError = ref('')
   </div>
 
   <!-- Login page for unauthenticated users -->
-  <div v-else-if="showLoginPage" class="login-container">
+  <div v-else-if="!showLoginPage" class="login-container">
     <div class="login-content">
       <h1>Welcome to Mark-It</h1>
       <p>Please sign in to access the application</p>
@@ -572,6 +578,20 @@ const markboardUploadError = ref('')
     <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
     <div class="main">
       <main>
+        <div class="room-join">
+          <h1>Current Room Code: {{ roomName }}</h1>
+          <p>Join a collaborative room:</p>
+          <form @submit.prevent="handleRoomJoin(roomInput)">
+            <input
+              type="text"
+              v-model="roomInput"
+              placeholder="Enter room name"
+              required
+              class="room-input"
+            />
+            <button type="submit" class="room-join-btn">Join/Create Room</button>
+          </form>
+        </div>
         <div class="markboard-title">
           <h1>Markboard</h1>
           <p>Click and drag to draw</p>
@@ -1044,5 +1064,65 @@ footer {
 
 .footer-content ul li a:hover {
   text-decoration: underline;
+}
+
+.room-join {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 32px 24px 24px 24px;
+  margin: 32px auto 24px auto;
+  max-width: 1024px;
+  width: 1024px;
+  border: none;
+}
+
+.room-join h1 {
+  color: #1976d2;
+  margin-bottom: 8px;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.room-join p {
+  color: #64748b;
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+
+.room-join form {
+  display: flex;
+  gap: 12px;
+}
+
+.room-input {
+  font-size: 1rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1.5px solid #bdbdbd;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 180px;
+  max-width: 240px;
+}
+
+.room-input:focus {
+  border-color: #1976d2;
+}
+
+.room-join-btn {
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.room-join-btn:hover {
+  background: #fff;
+  color: #1976d2;
 }
 </style>
