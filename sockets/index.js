@@ -40,12 +40,22 @@ io.on('connection', (socket) => {
     }
   })
   socket.on('joinRoom', (room) => {
-    console.log(`User joined room: ${room}`);
-    socket.join(room);
+    if (!room || typeof room !== 'string' || room.trim() === '') {
+      console.log('Invalid room name provided');
+      return;
+    }
+    const sanitizedRoom = room.trim();
+    console.log(`User joined room: ${sanitizedRoom}`);
+    socket.join(sanitizedRoom);
   });
   socket.on('leaveRoom', (room) => {
-    console.log(`User left room: ${room}`);
-    socket.leave(room);
+    if (!room || typeof room !== 'string' || room.trim() === '') {
+      console.log('Invalid room name for leaving');
+      return;
+    }
+    const sanitizedRoom = room.trim();
+    console.log(`User left room: ${sanitizedRoom}`);
+    socket.leave(sanitizedRoom);
   });
 });
 

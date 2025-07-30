@@ -13,7 +13,7 @@ export const socket = io(URL)
 
 socket.on('connect', () => {
   state.connected = true
-  socket.emit('joinRoom', state.currentRoom)
+  if (state.currentRoom && state.currentRoom !== '') socket.emit('joinRoom', state.currentRoom)
 })
 
 socket.on('disconnect', () => {
@@ -37,7 +37,7 @@ export function requestMarkboard() {
 }
 
 export function joinRoom(room) {
-  socket.emit('leaveRoom', state.currentRoom)
+  if (state.currentRoom && state.currentRoom !== '') socket.emit('leaveRoom', state.currentRoom)
   state.currentRoom = room
-  socket.emit('joinRoom', room)
+  if (room && room !== '') socket.emit('joinRoom', room)
 }
