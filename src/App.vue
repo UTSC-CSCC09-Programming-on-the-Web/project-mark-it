@@ -553,7 +553,7 @@ const markboardUploadError = ref('')
   </div>
 
   <!-- Login page for unauthenticated users -->
-  <div v-else-if="!showLoginPage" class="login-container">
+  <div v-else-if="showLoginPage" class="login-container">
     <div class="login-content">
       <h1>Welcome to Mark-It</h1>
       <p>Please sign in to access the application</p>
