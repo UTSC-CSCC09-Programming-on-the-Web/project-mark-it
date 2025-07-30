@@ -23,15 +23,21 @@ io.on('connection', (socket) => {
   });
   socket.on('paint', ({ room, paint }) => {
     console.log(`paint in room ${room}:`, paint)
-    socket.to(room).emit('paint', paint)
+    if (room !== '') {
+      socket.to(room).emit('paint', paint)
+    }
   })
   socket.on('markboard', ({ room, markboard }) => {
     console.log(`markboard in room ${room}:`, markboard)
-    socket.to(room).emit('markboard', markboard)
+    if (room !== '') {
+      socket.to(room).emit('markboard', markboard)
+    }
   })
   socket.on('markboardReq', ({ room }) => {
     console.log(`markboard requested in room ${room}`)
-    socket.to(room).emit('markboardReq', true)
+    if (room !== '') {
+      socket.to(room).emit('markboardReq', true)
+    }
   })
   socket.on('joinRoom', (room) => {
     console.log(`User joined room: ${room}`);
