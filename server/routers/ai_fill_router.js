@@ -264,7 +264,7 @@ aiFillRouter.get('/tempfile/:id', async (req, res) => {
   res.sendFile(filePath)
 })
 
-filesRouter.delete('/tempfile/:id', async (req, res) => {
+aiFillRouter.delete('/tempfile/:id', async (req, res) => {
   const file = await TempFile.findByPk(req.params.id)
   if (!file) {
     return res.status(404).json({ error: 'File not found' })
