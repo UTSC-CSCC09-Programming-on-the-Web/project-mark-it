@@ -113,6 +113,40 @@ aiFillRouter.post('/reimagine', requireSubscription, upload.fields([
     });
 });
 
+aiFillRouter.post('/text-to-image', requireSubscription, upload.none(), async (req, res) => {
+    const prompt = req.body.prompt
+
+    if (!clipdropApiKey) {
+        return res.status(500).json({ error: 'ClipDrop API key not configured' });
+    }
+    if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const form = new FormData()
+    form.append('prompt', prompt)
+
+    fetch('https://clipdrop-api.co/text-to-image/v1', {
+        method: 'POST',
+        headers: {
+            'x-api-key': clipdropApiKey,
+        },
+        body: form,
+    })
+    .then(response => {
+        console.log('ClipDrop response:', response.status, response.statusText)
+        return response.arrayBuffer()
+    })
+    .then(buffer => {
+        // buffer here is a binary representation of the returned image
+        res.set('Content-Type', 'image/jpeg'); // Response is always JPEG
+        res.status(200).send(Buffer.from(buffer));
+    })
+    .catch(err => {
+        res.status(500).json({ error: err.message });
+    });
+});
+
 aiFillRouter.post('/generative-fill-v2', requireSubscription, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'mask', maxCount: 1 }
