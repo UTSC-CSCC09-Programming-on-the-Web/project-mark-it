@@ -95,7 +95,7 @@ async function handleUnsubscribe() {
       showPaywall.value = true
       if (user.value) user.value.isSubscribed = false
     }
-    else alert('Failed to unsubscribe.')
+    else alert('Failed to unsubscribe: ' + data.error)
 
   } catch (error) {
     console.error('Error unsubscribing:', error)
