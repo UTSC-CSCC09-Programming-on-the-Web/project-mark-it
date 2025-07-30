@@ -2,6 +2,8 @@
 Deployed URL: https://joezhou.me
 <br>
 NOTE: If you are unable to connect, try using a VPN.
+<br>
+Project Demo: https://youtu.be/oeZ2Fa7e2IU
 
 ## **Team Members**
 
