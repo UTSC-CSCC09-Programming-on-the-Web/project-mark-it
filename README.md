@@ -1,5 +1,7 @@
 # **Project Mark-it**
 
+Deployed URL: https://joezhou.me
+
 ## **Team Members**
 
 - **Danny Yang**  
