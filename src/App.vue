@@ -6,6 +6,7 @@ import PaymentComponent from './components/PaymentComponent.vue'
 import SuccessPage from './components/SuccessPage.vue'
 import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
+import { joinRoom, requestMarkboard } from './js/socket.js'
 import { API_BASE_URL } from '../config.js'
 
 // Stripe paywall and auth states
@@ -14,6 +15,8 @@ const isLoading = ref(true)
 const showPaywall = ref(false)
 const showLoginPage = ref(false)
 const currentRoute = ref('')
+const roomName = ref('')
+const roomInput = ref('')
 
 // Stripe paywall routes
 function getCurrentRoute() {
@@ -532,9 +535,12 @@ function handleColorChange(newColor) {
   color.value = newColor
 }
 
-function handleRoomJoin(roomName) {
-  console.log('Joining room:', roomName)
-
+function handleRoomJoin() {
+  roomName.value = roomInput.value.trim()
+  console.log('Joining room:', roomName.value)
+  joinRoom(roomName.value)
+  requestMarkboard()
+  roomInput.value = ''
 }
 
 function handleClearMarkboard() {
@@ -586,6 +592,20 @@ const markboardUploadError = ref('')
     <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
     <div class="main">
       <main>
+        <div class="room-join">
+          <h1>Current Room Code: {{ roomName }}</h1>
+          <p>Join a collaborative room:</p>
+          <form @submit.prevent="handleRoomJoin(roomInput)">
+            <input
+              type="text"
+              v-model="roomInput"
+              placeholder="Enter room name"
+              required
+              class="room-input"
+            />
+            <button type="submit" class="room-join-btn">Join/Create Room</button>
+          </form>
+        </div>
         <div class="markboard-title">
           <h1>Markboard</h1>
           <p>Click and drag to draw</p>
@@ -613,32 +633,32 @@ const markboardUploadError = ref('')
             </div>
           </div>
         </div>
-      </main>
-      <div class="generative-fill">
-        <h2>AI Generative Fill</h2>
-        <p>Powered by Phot.ai</p>
-        <span class="how-to-use-tooltip">
-          How to use
-          <span class="how-to-use-popup">
-            <strong>Instructions:</strong><br>
-            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
-            2. Enter a prompt describing what you want.<br>
-            3. Click <b>Generate</b>.<br>
-            4. Wait for the AI to fill the masked area.<br>
+        <div class="generative-fill">
+          <h2>AI Generative Fill</h2>
+          <p>Powered by Phot.ai</p>
+          <span class="how-to-use-tooltip">
+            How to use
+            <span class="how-to-use-popup">
+              <strong>Instructions:</strong><br>
+              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
+              2. Enter a prompt describing what you want.<br>
+              3. Click <b>Generate</b>.<br>
+              4. Wait for the AI to fill the masked area.<br>
+            </span>
           </span>
-        </span>
-        <div class="wrapper generative-fill-actions">
-          <button
-            class="mask-btn"
-            @click="handleToggleMaskMode"
-          >
-            {{ maskModeText }}
-          </button>
-          <div>
-            <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
-              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-              <button type="submit">Generate</button>
-            </form>
+          <div class="wrapper generative-fill-actions">
+            <button
+              class="mask-btn"
+              @click="handleToggleMaskMode"
+            >
+              {{ maskModeText }}
+            </button>
+            <div>
+              <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
+                <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+                <button type="submit">Generate</button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -1058,5 +1078,65 @@ footer {
 
 .footer-content ul li a:hover {
   text-decoration: underline;
+}
+
+.room-join {
+  background: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 32px 24px 24px 24px;
+  margin: 32px auto 24px auto;
+  max-width: 1024px;
+  width: 1024px;
+  border: none;
+}
+
+.room-join h1 {
+  color: #1976d2;
+  margin-bottom: 8px;
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.room-join p {
+  color: #64748b;
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+
+.room-join form {
+  display: flex;
+  gap: 12px;
+}
+
+.room-input {
+  font-size: 1rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1.5px solid #bdbdbd;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 180px;
+  max-width: 240px;
+}
+
+.room-input:focus {
+  border-color: #1976d2;
+}
+
+.room-join-btn {
+  font-size: 1rem;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1.5px solid #1976d2;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.room-join-btn:hover {
+  background: #fff;
+  color: #1976d2;
 }
 </style>
