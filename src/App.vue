@@ -7,8 +7,7 @@ import SuccessPage from './components/SuccessPage.vue'
 import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
 import { joinRoom, requestMarkboard } from './js/socket.js'
-
-const API_BASE_URL = 'http://localhost:3001'
+import { API_BASE_URL } from '../config.js'
 
 // Stripe paywall and auth states
 const user = ref(null)
@@ -84,10 +83,7 @@ function handleSubscriptionCancel() {
 }
 
 async function handleUnsubscribe() {
-  if (
-    !confirm('Are you sure you want to unsubscribe? You will lose access to all premium features.')
-  )
-    return
+  if (!confirm('If you unsubscribe, you will lose access to all features immediately.')) return
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/payment/cancel-subscription`, {
@@ -96,14 +92,12 @@ async function handleUnsubscribe() {
     })
     const data = await res.json()
     if (res.ok) {
-      alert(
-        'Successfully unsubscribed. You can resubscribe anytime to regain access to premium features.',
-      )
-      // Redirect to subscription page
+      alert('Successfully unsubscribed.')
+      // Redirect to paywall
       showPaywall.value = true
-      // Update user subscription status locally
       if (user.value) user.value.isSubscribed = false
-    } else alert('Failed to unsubscribe: ' + (data.error || 'Unknown error'))
+    }
+    else alert('Failed to unsubscribe: ' + data.error)
   } catch (error) {
     console.error('Error unsubscribing:', error)
     alert('Failed to unsubscribe: ' + error.message)
@@ -274,9 +268,10 @@ function handleGenerativeFill(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill/`, {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill`, {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       })
         .then((res) => {
           if (!res.ok) {
@@ -340,9 +335,10 @@ function handleAIReimagine(event) {
     formData.append('image', imageBlob, 'image.jpg')
     formData.append('imageMime', 'image/jpeg')
 
-    fetch(`${backendUrl}/api/ai_fill/reimagine/`, {
+    fetch(`${API_BASE_URL}/api/ai_fill/reimagine`, {
       method: 'POST',
       body: formData,
+      credentials: 'include'
     })
       .then((res) => {
         if (!res.ok) {
@@ -365,6 +361,50 @@ function handleAIReimagine(event) {
         }
         toggleLoading() // Turn loading off
       })
+  })
+}
+
+function handleTextToImage(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  const formData = new FormData()
+  formData.append('prompt', aiPrompt.value)
+
+  fetch(`${API_BASE_URL}/api/ai_fill/text-to-image/`, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  })
+  .then((res) => {
+    if (!res.ok) {
+      return res.json().then((err) => {
+        alert('Text To Image failed: ' + (err.error || 'Unknown error'))
+        throw new Error('Text To Image failed')
+      })
+    }
+    return res.blob()
+  })
+  .then((blob) => {
+    if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+      markboardRef.value.setImageOnMarkboard(blob)
+    }
+    toggleLoading() // Turn loading off
+  })
+  .catch((err) => {
+    if (err.message !== 'Text To Image failed') {
+      alert('Text To Image failed: ' + err.message)
+    }
+    toggleLoading() // Turn loading off
   })
 }
 
@@ -405,9 +445,10 @@ function handleGenerativeFillV2(event) {
       formData.append('imageMime', 'image/jpeg')
       formData.append('maskMime', 'image/png')
 
-      fetch(`${backendUrl}/api/ai_fill/generative-fill-v2/`, {
+      fetch(`${API_BASE_URL}/api/ai_fill/generative-fill-v2`, {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       })
         .then((res) => {
           if (!res.ok) {
@@ -419,8 +460,22 @@ function handleGenerativeFillV2(event) {
           return res.json()
         })
         .then((data) => {
+          console.log('PhotAI response data:', data);
+
+          // Handle the new response format from PhotAI Object Replacer API
+          let imageUrl;
+          if (data.output_urls && data.output_urls.length > 0) {
+            // Use the first output image from the array
+            imageUrl = data.output_urls[0];
+          } else if (data.imageUrl) {
+            // Fallback for old format
+            imageUrl = data.imageUrl;
+          } else {
+            throw new Error('No output images received from PhotAI API');
+          }
+
           if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
-            markboardRef.value.setImageOnMarkboard(data[0])
+            markboardRef.value.setImageOnMarkboard(imageUrl)
           }
           // Turn off mask mode after generation
           if (
@@ -552,18 +607,14 @@ const markboardUploadError = ref('')
 </script>
 
 <template>
-  <!-- Success page -->
   <SuccessPage v-if="currentRoute === 'success'" />
 
-  <!-- Cancel page -->
   <CancelPage v-else-if="currentRoute === 'cancel'" />
 
-  <!-- Loading state -->
   <div v-else-if="isLoading" class="loading-container">
     <h2>Loading...</h2>
   </div>
 
-  <!-- Login page for unauthenticated users -->
   <div v-else-if="showLoginPage" class="login-container">
     <div class="login-content">
       <h1>Welcome to Mark-It</h1>
@@ -572,7 +623,6 @@ const markboardUploadError = ref('')
     </div>
   </div>
 
-  <!-- Paywall for authenticated but unsubscribed users -->
   <div v-else-if="showPaywall" class="paywall-container">
     <div class="paywall-content">
       <h1>Subscribe to Mark-It</h1>
@@ -582,8 +632,7 @@ const markboardUploadError = ref('')
     </div>
   </div>
 
-  <!-- Main application for authenticated and subscribed users -->
-  <div>
+  <div v-else>
     <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
     <div class="main">
       <main>
@@ -606,7 +655,6 @@ const markboardUploadError = ref('')
           <p>Click and drag to draw</p>
         </div>
         <Markboard ref="markboardRef" :color="color" :width="width" />
-        <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
         <div v-if="loading" class="loading-title">Loading...</div>
         <div class="markboard-controls">
           <div class="wrapper">
@@ -635,24 +683,20 @@ const markboardUploadError = ref('')
           </div>
         </div>
         <div class="generative-fill">
-          <h2>AI Generative Fill</h2>
-          <p>Powered by Phot.ai</p>
+          <h2>AI Text To Image</h2>
+          <p>Powered by Clipdrop.co</p>
           <span class="how-to-use-tooltip">
             How to use
             <span class="how-to-use-popup">
-              <strong>Instructions:</strong><br />
-              1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br />
-              2. Enter a prompt describing what you want.<br />
-              3. Click <b>Generate</b>.<br />
-              4. Wait for the AI to fill the masked area.<br />
+              <strong>Instructions:</strong><br>
+              1. Enter a prompt describing what you want.<br>
+              2. Click <b>Generate</b>.<br>
+              3. Wait for the AI to fill the drawing board.<br>
             </span>
           </span>
           <div class="wrapper generative-fill-actions">
-            <button class="mask-btn" @click="handleToggleMaskMode">
-              {{ maskModeText }}
-            </button>
             <div>
-              <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
+              <form @submit.prevent="handleTextToImage" class="prompt-form">
                 <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
                 <button type="submit">Generate</button>
               </form>
@@ -683,7 +727,8 @@ const markboardUploadError = ref('')
 </template>
 
 <style scoped>
-/* Loading, Login, and Paywall Styles */
+/* GitHub Copilot Prompt: "Edit Stripe and login UI to match with home page styling" */
+
 .loading-container,
 .login-container,
 .paywall-container {

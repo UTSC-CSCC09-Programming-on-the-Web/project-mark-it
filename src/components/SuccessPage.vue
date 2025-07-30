@@ -30,6 +30,8 @@ export default {
 </script>
 
 <style scoped>
+/* GitHub Copilot Prompt: "Edit UI to match with home page styling" */
+
 .success-container {
   display: flex;
   justify-content: center;

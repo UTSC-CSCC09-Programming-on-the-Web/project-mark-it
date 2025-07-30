@@ -17,7 +17,7 @@ in the project description
 </template>
 
 <script>
-const API_BASE_URL = 'http://localhost:3001'
+import { API_BASE_URL } from '../../config.js'
 
 export default {
   methods: {
@@ -38,6 +38,8 @@ export default {
 </script>
 
 <style scoped>
+/* GitHub Copilot Prompt: "Edit UI to match with home page styling" */
+
 .cancel-container {
   display: flex;
   flex-direction: column;

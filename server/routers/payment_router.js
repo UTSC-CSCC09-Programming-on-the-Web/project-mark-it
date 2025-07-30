@@ -123,14 +123,14 @@ paymentRouter.post('/webhook', async (req, res) => {
   res.json({ received: true })
 })
 
+// GitHub Copilot Prompt: "Check user subscription status on Stripe"
+
 // Check subscription status
 paymentRouter.get('/subscription-status', requireAuth, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id)
     if (!user) return res.status(404).json({ error: 'User not found' })
-
     if (!user.customerId) {
-      // No customer ID means no subscription
       await User.update({ isSubscribed: false }, { where: { id: user.id } })
       return res.json({ isSubscribed: false, customerId: null })
     }
@@ -141,7 +141,6 @@ paymentRouter.get('/subscription-status', requireAuth, async (req, res) => {
       status: 'active',
       limit: 1
     })
-
     const hasActiveSubscription = subscriptions.data.length > 0
 
     // Update local database to match Stripe
