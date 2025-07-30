@@ -271,6 +271,7 @@ function handleGenerativeFill(event) {
       fetch(`${API_BASE_URL}/api/ai_fill/generative-fill`, {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       })
         .then((res) => {
           if (!res.ok) {
@@ -337,6 +338,7 @@ function handleAIReimagine (event) {
     fetch(`${API_BASE_URL}/api/ai_fill/reimagine`, {
       method: 'POST',
       body: formData,
+      credentials: 'include'
     })
       .then((res) => {
         if (!res.ok) {
@@ -381,6 +383,7 @@ function handleTextToImage(event) {
   fetch(`${API_BASE_URL}/api/ai_fill/text-to-image/`, {
     method: 'POST',
     body: formData,
+    credentials: 'include'
   })
   .then((res) => {
     if (!res.ok) {
