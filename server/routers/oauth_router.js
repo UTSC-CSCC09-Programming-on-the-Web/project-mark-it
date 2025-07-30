@@ -5,6 +5,7 @@ import { User } from '../models/user.js'
 export const oauthRouter = Router()
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN || 'http://localhost:5173'
+console.log('AUTH FRONTEND_DOMAIN:', FRONTEND_DOMAIN)
 
 // Google signin
 oauthRouter.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))

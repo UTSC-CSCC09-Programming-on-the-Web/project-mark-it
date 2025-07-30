@@ -7,7 +7,7 @@ import SuccessPage from './components/SuccessPage.vue'
 import CancelPage from './components/CancelPage.vue'
 import { ref, onMounted } from 'vue'
 
-const API_BASE_URL = 'http://localhost:3001'
+const API_BASE_URL = 'http://dannyyang.me:3001'
 
 // Stripe paywall and auth states
 const user = ref(null)
@@ -23,7 +23,7 @@ function getCurrentRoute() {
   if (path === '/cancel') return 'cancel'
   return 'home'
 }
-const backendUrl = 'http://localhost:3001' //replace after deployment
+const backendUrl = 'http://dannyyang.me:3001' //replace after deployment
 
 // For testing only (remove later)
 // This function fetches the current user's data from the server

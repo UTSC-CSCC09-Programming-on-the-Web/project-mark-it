@@ -1,0 +1,20 @@
+# Ignore directories
+node_modules/
+venv/
+vendor/
+.git/
+.vscode/
+.idea/
+tmp/
+logs/
+dist/
+build/
+
+# Ignore files
+*.log
+.env
+.env.*
+*.bak
+*.swp
+Dockerfile
+docker-compose.yml

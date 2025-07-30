@@ -15,7 +15,7 @@
 </template>
 
 <script>
-const backendUrl = 'http://localhost:3001'
+const backendUrl = 'http://dannyyang.me:3001'
 
 export default {
   data() {

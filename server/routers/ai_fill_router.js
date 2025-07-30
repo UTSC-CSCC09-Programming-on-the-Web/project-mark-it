@@ -7,9 +7,10 @@ import multer from 'multer';
 import { requireSubscription } from '../middleware/auth.js';
 import path from 'path'
 import fs from 'fs'
+import axios from 'axios';
+import { filesRouter } from './files_router.js';
 
-const axios = require('axios');
-const backendUrl = "https://localhost:3001"; // replace later after deployment
+const backendUrl = process.env.FRONTEND_DOMAIN || 'http://localhost:3001/api/ai_fill';
 
 export const aiFillRouter = Router();
 const upload = multer({

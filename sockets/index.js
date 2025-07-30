@@ -8,7 +8,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://134.122.34.179:5173",
+    origin: "http://dannyyang.me",
     methods: ["GET", "POST"]
   }
 });
