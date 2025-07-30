@@ -661,7 +661,7 @@ const markboardUploadError = ref('')
             </div>
           </div>
         </div>
-      </div>
+      </main>
       <br />
       <br />
       <br />
