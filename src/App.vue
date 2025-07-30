@@ -360,6 +360,49 @@ function handleAIReimagine (event) {
   })
 }
 
+function handleTextToImage(event) {
+  event.preventDefault()
+  if (!aiPrompt.value) {
+    alert('Please enter a prompt.')
+    return
+  }
+  if (!markboardRef.value) {
+    alert('Markboard not ready.')
+    return
+  }
+
+  toggleLoading() // Turn loading on
+
+  const formData = new FormData()
+  formData.append('prompt', aiPrompt.value)
+
+  fetch(`${API_BASE_URL}/api/ai_fill/text-to-image/`, {
+    method: 'POST',
+    body: formData,
+  })
+  .then((res) => {
+    if (!res.ok) {
+      return res.json().then((err) => {
+        alert('Text To Image failed: ' + (err.error || 'Unknown error'))
+        throw new Error('Text To Image failed')
+      })
+    }
+    return res.blob()
+  })
+  .then((blob) => {
+    if (markboardRef.value && typeof markboardRef.value.setImageOnMarkboard === 'function') {
+      markboardRef.value.setImageOnMarkboard(blob)
+    }
+    toggleLoading() // Turn loading off
+  })
+  .catch((err) => {
+    if (err.message !== 'Text To Image failed') {
+      alert('Text To Image failed: ' + err.message)
+    }
+    toggleLoading() // Turn loading off
+  })
+}
+
 function handleGenerativeFillV2(event) {
   event.preventDefault()
   if (!aiPrompt.value) {
@@ -599,32 +642,25 @@ const markboardUploadError = ref('')
             </div>
           </div>
         </div>
-      </div>
-      <div class="generative-fill">
-        <h2>AI Generative Fill</h2>
-        <p>Powered by Phot.ai</p>
-        <span class="how-to-use-tooltip">
-          How to use
-          <span class="how-to-use-popup">
-            <strong>Instructions:</strong><br>
-            1. Click <b>Mask Mode</b> and paint over areas you want to fill.<br>
-            2. Enter a prompt describing what you want.<br>
-            3. Click <b>Generate</b>.<br>
-            4. Wait for the AI to fill the masked area.<br>
+        <div class="generative-fill">
+          <h2>AI Text To Image</h2>
+          <p>Powered by Clipdrop.co</p>
+          <span class="how-to-use-tooltip">
+            How to use
+            <span class="how-to-use-popup">
+              <strong>Instructions:</strong><br>
+              1. Enter a prompt describing what you want.<br>
+              2. Click <b>Generate</b>.<br>
+              3. Wait for the AI to fill the drawing board.<br>
+            </span>
           </span>
-        </span>
-        <div class="wrapper generative-fill-actions">
-          <button
-            class="mask-btn"
-            @click="handleToggleMaskMode"
-          >
-            {{ maskModeText }}
-          </button>
-          <div>
-            <form @submit.prevent="handleGenerativeFillV2" class="prompt-form">
-              <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
-              <button type="submit">Generate</button>
-            </form>
+          <div class="wrapper generative-fill-actions">
+            <div>
+              <form @submit.prevent="handleTextToImage" class="prompt-form">
+                <input type="text" placeholder="Enter prompt" v-model="aiPrompt" />
+                <button type="submit">Generate</button>
+              </form>
+            </div>
           </div>
         </div>
       </main>
