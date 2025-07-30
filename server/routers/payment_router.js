@@ -18,8 +18,11 @@ const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN || 'http://localhost:5173'
 paymentRouter.post('/create-checkout-session', requireAuth, async (req, res) => {
   try {
     const { lookup_key } = req.body
-    if (!lookup_key) return res.status(400).json({ error: 'Missing lookup key' })
-    const prices = await stripe.prices.list({ lookup_keys: [lookup_key] })
+    if (!lookup_key || typeof lookup_key !== 'string' || lookup_key.trim().length === 0)
+      return res.status(400).json({ error: 'Missing or invalid lookup key' })
+
+    const sanitized_lookup_key = lookup_key.trim()
+    const prices = await stripe.prices.list({ lookup_keys: [sanitized_lookup_key] })
     if (!prices.data || prices.data.length === 0) return res.status(404).json({ error: 'Price not found' })
 
     let customerId
@@ -47,7 +50,7 @@ paymentRouter.post('/create-checkout-session', requireAuth, async (req, res) => 
     })
     res.json({ url: session.url })
   } catch (err) {
-    console.error('Error creating checkout session:', err)
+    console.error('Error creating checkout session')
     res.status(500).json({ error: 'Failed to create checkout session' })
   }
 })
@@ -65,7 +68,7 @@ paymentRouter.post('/create-portal-session', requireAuth, async (req, res) => {
 
     res.json({ url: portalSession.url })
   } catch (error) {
-    console.error('Error creating portal session:', error)
+    console.error('Error creating portal session')
     res.status(500).json({ error: 'Failed to create portal session' })
   }
 })
@@ -76,11 +79,13 @@ paymentRouter.post('/webhook', async (req, res) => {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
   let event
 
+  if (!sig || !endpointSecret) return res.status(400).json({ error: 'Webhook configuration error' })
+
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message)
-    return res.status(400).send(`Webhook Error: ${err.message}`)
+    console.error('Webhook signature verification failed')
+    return res.status(400).json({ error: 'Webhook' })
   }
 
   try {
@@ -96,7 +101,6 @@ paymentRouter.post('/webhook', async (req, res) => {
         const updatedSubscription = event.data.object
         if (updatedSubscription.status === 'active') {
           await User.update({ isSubscribed: true }, { where: { customerId: updatedSubscription.customer } })
-          console.log(`Subscription activated for customer: ${updatedSubscription.customer}`)
         } else if (updatedSubscription.status === 'canceled' || updatedSubscription.status === 'incomplete_expired') {
           await User.update({ isSubscribed: false }, { where: { customerId: updatedSubscription.customer } })
           console.log(`Subscription deactivated for customer: ${updatedSubscription.customer}`)
@@ -113,10 +117,10 @@ paymentRouter.post('/webhook', async (req, res) => {
         console.log(`Payment failed for customer: ${failedInvoice.customer}`)
         break
       default:
-        console.log(`Unhandled event type ${event.type}`)
+        console.log(`Unhandled webhook event type: ${event.type}`)
     }
   } catch (error) {
-    console.error('Error processing webhook:', error)
+    console.error('Error processing webhook')
     return res.status(500).json({ error: 'Webhook processing failed' })
   }
 
@@ -150,7 +154,7 @@ paymentRouter.get('/subscription-status', requireAuth, async (req, res) => {
 
     res.json({ isSubscribed: hasActiveSubscription, customerId: user.customerId })
   } catch (error) {
-    console.error('Error finding subscription:', error)
+    console.error('Error finding subscription')
     res.status(500).json({ error: 'Failed to get subscription status' })
   }
 })
@@ -167,7 +171,7 @@ paymentRouter.post('/cancel-subscription', requireAuth, async (req, res) => {
     await User.update({ isSubscribed: false }, { where: { id: user.id } })
     res.json({ success: true, message: 'Subscription cancelled' })
   } catch (error) {
-    console.error('Error cancelling subscription:', error)
+    console.error('Error cancelling subscription')
     res.status(500).json({ error: 'Failed to cancel subscription' })
   }
 })

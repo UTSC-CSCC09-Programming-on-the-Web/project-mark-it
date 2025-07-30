@@ -33,7 +33,7 @@ export async function requireSubscription(req, res, next) {
 
     next()
   } catch (error) {
-    console.error('Error checking subscription:', error)
-    return res.status(500).json({ error: 'Unexpected error' })
+    console.error('Error checking subscription')
+    return res.status(500).json({ error: 'Unexpected error occurred' })
   }
 }
