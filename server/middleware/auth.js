@@ -18,6 +18,8 @@ export async function requireSubscription(req, res, next) {
       return res.status(403).json({ error: 'User is not subscribed' })
     }
 
+    // Reused GitHub Copilot code cited in payment_router.js
+    // With Prompt: "Check user subscription status on Stripe"
     const subscriptions = await stripe.subscriptions.list({
       customer: user.customerId,
       status: 'active',
