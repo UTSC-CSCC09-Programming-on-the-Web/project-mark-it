@@ -81,7 +81,7 @@ function handleSubscriptionCancel() {
 }
 
 async function handleUnsubscribe() {
-  if (!confirm('Are you sure you want to unsubscribe? You will lose access to all premium features.')) return
+  if (!confirm('If you unsubscribe, you will lose access to all features immediately.')) return
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/payment/cancel-subscription`, {
@@ -90,13 +90,12 @@ async function handleUnsubscribe() {
     })
     const data = await res.json()
     if (res.ok) {
-      alert('Successfully unsubscribed. You can resubscribe anytime to regain access to premium features.')
-      // Redirect to subscription page
+      alert('Successfully unsubscribed.')
+      // Redirect to paywall
       showPaywall.value = true
-      // Update user subscription status locally
       if (user.value) user.value.isSubscribed = false
     }
-    else alert('Failed to unsubscribe: ' + (data.error || 'Unknown error'))
+    else alert('Failed to unsubscribe.')
 
   } catch (error) {
     console.error('Error unsubscribing:', error)
@@ -601,18 +600,14 @@ const markboardUploadError = ref('')
 </script>
 
 <template>
-  <!-- Success page -->
   <SuccessPage v-if="currentRoute === 'success'" />
 
-  <!-- Cancel page -->
   <CancelPage v-else-if="currentRoute === 'cancel'" />
 
-  <!-- Loading state -->
   <div v-else-if="isLoading" class="loading-container">
     <h2>Loading...</h2>
   </div>
 
-  <!-- Login page for unauthenticated users -->
   <div v-else-if="showLoginPage" class="login-container">
     <div class="login-content">
       <h1>Welcome to Mark-It</h1>
@@ -623,7 +618,6 @@ const markboardUploadError = ref('')
     </div>
   </div>
 
-  <!-- Paywall for authenticated but unsubscribed users -->
   <div v-else-if="showPaywall" class="paywall-container">
     <div class="paywall-content">
       <h1>Subscribe to Mark-It</h1>
@@ -633,7 +627,6 @@ const markboardUploadError = ref('')
     </div>
   </div>
 
-  <!-- Main application for authenticated and subscribed users -->
   <div v-else>
     <TopBar @signout="handleSignout" @unsubscribe="handleUnsubscribe" />
     <div class="main">
@@ -657,7 +650,6 @@ const markboardUploadError = ref('')
           <p>Click and drag to draw</p>
         </div>
         <Markboard ref="markboardRef" :color="color" />
-        <!-- I wanted to put the loading in the Markboard, but it kept resetting the maskboard -->
         <div v-if="loading" class="loading-title">Loading...</div>
         <div class="markboard-controls">
           <div class="wrapper">
@@ -730,7 +722,6 @@ const markboardUploadError = ref('')
 </template>
 
 <style scoped>
-/* Loading, Login, and Paywall Styles */
 .loading-container,
 .login-container,
 .paywall-container {
